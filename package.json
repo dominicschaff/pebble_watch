@@ -1,0 +1,28 @@
+{
+  "name": "nixi",
+  "author": "Merlin",
+  "companyName": "Merlin ind",
+  "version": "1.0.0",
+  "keywords": ["pebble-app"],
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "displayName": "nixi",
+    "uuid": "2d1431e5-c9bb-4612-85a7-262b032f8492",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "basalt"
+    ],
+    "watchapp": {
+      "watchface": true
+    },
+    "messageKeys": [
+      "dummy"
+    ],
+    "resources": {
+      "media": []
+    }
+  },
+  "capabilities": [ "health" ]
+}
