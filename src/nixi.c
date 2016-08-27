@@ -1,10 +1,22 @@
 #include <pebble.h>
 
+// Screen sizing for pebble time
 #define WIDTHf 144.0f
 #define WIDTH 144
 #define HEIGHTf 168.0f
 #define HEIGHT 168
+
+// Default value
 #define STEPS_DEFAULT 7500
+
+// Piece Sizing
+#define BATTERY_HEIGHT 5
+#define TIME_BAR_WIDTH 20
+#define BT_ERROR_THICKNESS 5
+#define PADDING 5
+#define SUB_TEXT_HEIGHT 30
+#define TITLE_TEXT_HEIGHT 50
+
 
 // All of the global variables
 static Window *s_main_window;
@@ -27,6 +39,7 @@ static void bluetooth_update_proc(Layer *layer, GContext *ctx);
 static void hour_update_proc(Layer *layer, GContext *ctx);
 static void minute_proc_layer(Layer *layer, GContext *ctx);
 static void steps_proc_layer(Layer *layer, GContext *ctx);
+static void add_text_layer(Layer *window_layer, TextLayer *text_layer);
 
 /**
  * Main function, the watch runs this function
@@ -83,56 +96,54 @@ static void main_window_load(Window *window)
   GRect bounds = layer_get_bounds(window_layer);
 
   // Create hour meter Layer
-  s_hour_layer = layer_create(GRect(0, 0, 25, HEIGHT));
+  s_hour_layer = layer_create(GRect(0, BATTERY_HEIGHT, TIME_BAR_WIDTH, HEIGHT));
   layer_set_update_proc(s_hour_layer, hour_update_proc);
   layer_add_child(window_get_root_layer(window), s_hour_layer);
 
   // Create minute meter Layer
-  s_minute_layer = layer_create(GRect(119, 0, 25, HEIGHT));
+  s_minute_layer = layer_create(GRect(WIDTH - TIME_BAR_WIDTH, BATTERY_HEIGHT, TIME_BAR_WIDTH, HEIGHT));
   layer_set_update_proc(s_minute_layer, minute_proc_layer);
   layer_add_child(window_get_root_layer(window), s_minute_layer);
 
+  // Create bluetooth meter Layer
+  s_bluetooth_layer = layer_create(GRect(TIME_BAR_WIDTH, HEIGHT/2 - TITLE_TEXT_HEIGHT/2, WIDTH - TIME_BAR_WIDTH*2, TITLE_TEXT_HEIGHT));
+  layer_set_update_proc(s_bluetooth_layer, bluetooth_update_proc);
+  layer_add_child(window_get_root_layer(window), s_bluetooth_layer);
+
   // Create steps meter Layer
-  s_steps_layer = layer_create(GRect(25, 10, 94, 50));
+  s_steps_layer = layer_create(GRect(TIME_BAR_WIDTH, BATTERY_HEIGHT + PADDING, WIDTH - TIME_BAR_WIDTH*2, SUB_TEXT_HEIGHT + PADDING*4));
   layer_set_update_proc(s_steps_layer, steps_proc_layer);
   layer_add_child(window_get_root_layer(window), s_steps_layer);
 
   // Create the time display
-  s_time_text_layer = text_layer_create(GRect(0, 52, WIDTH, 50));
-  text_layer_set_background_color(s_time_text_layer, GColorClear);
-  text_layer_set_text_color(s_time_text_layer, GColorBlack);
-  text_layer_set_text(s_time_text_layer, "--");
+  // I can't seem to calculate 52 from the other values, I will find a way (or at least in a way that makes sense)
+  s_time_text_layer = text_layer_create(GRect(0, 52, WIDTH, TITLE_TEXT_HEIGHT));
   text_layer_set_font(s_time_text_layer, fonts_get_system_font(FONT_KEY_ROBOTO_BOLD_SUBSET_49));
-  text_layer_set_text_alignment(s_time_text_layer, GTextAlignmentCenter);
-  layer_add_child(window_layer, text_layer_get_layer(s_time_text_layer));
+  add_text_layer(window_layer, s_time_text_layer);
 
   // Create the date display
-  s_date_text_layer = text_layer_create(GRect(0, 138, WIDTH, 30));
-  text_layer_set_background_color(s_date_text_layer, GColorClear);
-  text_layer_set_text_color(s_date_text_layer, GColorBlack);
-  text_layer_set_text(s_date_text_layer, "--");
-  text_layer_set_font(s_date_text_layer, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
-  text_layer_set_text_alignment(s_date_text_layer, GTextAlignmentCenter);
-  layer_add_child(window_layer, text_layer_get_layer(s_date_text_layer));
+  s_date_text_layer = text_layer_create(GRect(0, HEIGHT - SUB_TEXT_HEIGHT, WIDTH, SUB_TEXT_HEIGHT));
+  text_layer_set_font(s_date_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  add_text_layer(window_layer, s_date_text_layer);
 
   // Create the steps display
-  s_steps_text_layer = text_layer_create(GRect(0, 20, WIDTH, 30));
-  text_layer_set_background_color(s_steps_text_layer, GColorClear);
-  text_layer_set_text_color(s_steps_text_layer, GColorBlack);
-  text_layer_set_text(s_steps_text_layer, "--");
-  text_layer_set_font(s_steps_text_layer, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
-  text_layer_set_text_alignment(s_steps_text_layer, GTextAlignmentCenter);
-  layer_add_child(window_layer, text_layer_get_layer(s_steps_text_layer));
+  s_steps_text_layer = text_layer_create(GRect(0, BATTERY_HEIGHT, WIDTH, SUB_TEXT_HEIGHT));
+  text_layer_set_font(s_steps_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  add_text_layer(window_layer, s_steps_text_layer);
 
   // Create battery meter Layer
-  s_battery_layer = layer_create(GRect(0, 0, WIDTH, 5));
+  s_battery_layer = layer_create(GRect(0, 0, WIDTH, BATTERY_HEIGHT));
   layer_set_update_proc(s_battery_layer, battery_update_proc);
   layer_add_child(window_get_root_layer(window), s_battery_layer);
+}
 
-  // Create bluetooth meter Layer
-  s_bluetooth_layer = layer_create(GRect(25, 102, 94, 5));
-  layer_set_update_proc(s_bluetooth_layer, bluetooth_update_proc);
-  layer_add_child(window_get_root_layer(window), s_bluetooth_layer);
+static void add_text_layer(Layer *window_layer, TextLayer *text_layer)
+{
+  text_layer_set_background_color(text_layer, GColorClear);
+  text_layer_set_text_color(text_layer, GColorBlack);
+  text_layer_set_text(text_layer, "--");
+  text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
+  layer_add_child(window_layer, text_layer_get_layer(text_layer));
 }
 
 /**
@@ -244,7 +255,7 @@ static void hour_update_proc(Layer *layer, GContext *ctx)
 
   // Draw the bar
   graphics_context_set_fill_color(ctx, GColorPictonBlue);
-  graphics_fill_rect(ctx, GRect(0, HEIGHTf - (int)(float)(((float)s_hour_level / 24.0F) * HEIGHTf), bounds.size.w, HEIGHTf), 0, GCornerNone);
+  graphics_fill_rect(ctx, GRect(0, HEIGHTf - (int)(float)(((float)s_hour_level / 24.0F) * bounds.size.h), bounds.size.w, HEIGHTf), 0, GCornerNone);
 }
 
 /**
@@ -263,7 +274,7 @@ static void minute_proc_layer(Layer *layer, GContext *ctx)
 
   // Draw the bar
   graphics_context_set_fill_color(ctx, GColorMagenta);
-  graphics_fill_rect(ctx, GRect(0, HEIGHTf - (int)(float)(((float)s_minute_level / 60.0F) * HEIGHTf), bounds.size.w, HEIGHTf), 0, GCornerNone);
+  graphics_fill_rect(ctx, GRect(0, HEIGHTf - (int)(float)(((float)s_minute_level / 60.0F) * bounds.size.h), bounds.size.w, HEIGHTf), 0, GCornerNone);
 }
 
 /**
@@ -283,7 +294,7 @@ static void steps_proc_layer(Layer *layer, GContext *ctx)
   float l = 1.0f*s_steps_level/s_steps_average;
 
   graphics_context_set_fill_color(ctx, GColorShockingPink);
-  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, 15, 0, DEG_TO_TRIGANGLE(l*360));
+  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, SUB_TEXT_HEIGHT/2, 0, DEG_TO_TRIGANGLE(l*360));
 
   // Draw the bar
   // if (l >= 1.0) {
