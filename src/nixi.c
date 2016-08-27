@@ -81,7 +81,7 @@ static void update_time()
 
   if(mask & HealthServiceAccessibilityMaskAvailable) {
     s_steps_level = (int)health_service_sum_today(metric);
-    snprintf(steps_buffer, sizeof(steps_buffer), "steps: %d", s_steps_level);
+    snprintf(steps_buffer, sizeof(steps_buffer), "%d - %d%%", s_steps_level, (int)(100.0f*s_steps_level/s_steps_average));
   } else {
     snprintf(steps_buffer, sizeof(steps_buffer), "steps: N/A");
   }
@@ -131,7 +131,7 @@ static void main_window_load(Window *window)
   layer_add_child(window_get_root_layer(window), s_minute_layer);
 
   // Create steps meter Layer
-  s_steps_layer = layer_create(GRect(25, 20, 94, 30));
+  s_steps_layer = layer_create(GRect(25, 10, 94, 50));
   layer_set_update_proc(s_steps_layer, steps_proc_layer);
   layer_add_child(window_get_root_layer(window), s_steps_layer);
 
@@ -246,14 +246,17 @@ static void steps_proc_layer(Layer *layer, GContext *ctx)
 
   float l = 1.0f*s_steps_level/s_steps_average;
 
+  graphics_context_set_fill_color(ctx, GColorShockingPink);
+  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, 15, 0, DEG_TO_TRIGANGLE(l*360));
+
   // Draw the bar
-  if (l >= 1.0) {
-    graphics_context_set_fill_color(ctx, GColorMalachite);
-    graphics_fill_rect(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), 0, GCornerNone);
-  } else {
-    graphics_context_set_fill_color(ctx, GColorLavenderIndigo);
-    graphics_fill_rect(ctx, GRect(0, 0, l*bounds.size.w, bounds.size.h), 0, GCornerNone);
-  }
+  // if (l >= 1.0) {
+  //   graphics_context_set_fill_color(ctx, GColorMalachite);
+  //   graphics_fill_rect(ctx, GRect(0, bounds.size.h-5, bounds.size.w, 5), 0, GCornerNone);
+  // } else {
+  //   graphics_context_set_fill_color(ctx, GColorLavenderIndigo);
+  //   graphics_fill_rect(ctx, GRect(0, bounds.size.h-5, l*bounds.size.w, 5), 0, GCornerNone);
+  // }
 }
 
 static void init()
