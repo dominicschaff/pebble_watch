@@ -1,4 +1,4 @@
-# pebble_watch
+# My Pebble Watch
 
 This is a simple watchface I have written. Most of the code comes directly from the tutorials (<https://developer.pebble.com/tutorials/watchface-tutorial/part1/>).
 
