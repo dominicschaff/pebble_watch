@@ -81,7 +81,7 @@ static void update_time()
 
   if(mask & HealthServiceAccessibilityMaskAvailable) {
     s_steps_level = (int)health_service_sum_today(metric);
-    snprintf(steps_buffer, sizeof(steps_buffer), "%d - %d%%", s_steps_level, (int)(100.0f*s_steps_level/s_steps_average));
+    snprintf(steps_buffer, sizeof(steps_buffer), "%d [%d%%]", s_steps_level, (int)(100.0f*s_steps_level/s_steps_average));
   } else {
     snprintf(steps_buffer, sizeof(steps_buffer), "steps: N/A");
   }
