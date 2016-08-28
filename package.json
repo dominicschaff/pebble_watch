@@ -1,28 +1,31 @@
 {
-  "name": "nixi",
-  "author": "Merlin",
-  "companyName": "Merlin ind",
-  "version": "1.0.0",
-  "keywords": ["pebble-app"],
-  "private": true,
-  "dependencies": {},
-  "pebble": {
-    "displayName": "nixi",
-    "uuid": "2d1431e5-c9bb-4612-85a7-262b032f8492",
-    "sdkVersion": "3",
-    "enableMultiJS": true,
-    "targetPlatforms": [
-      "basalt"
+    "author": "Merlin",
+    "dependencies": {},
+    "keywords": [
+        "pebble-app"
     ],
-    "watchapp": {
-      "watchface": true
+    "name": "nixi",
+    "pebble": {
+        "capabilities": [
+            "health"
+        ],
+        "displayName": "nixi",
+        "enableMultiJS": true,
+        "messageKeys": [
+            "dummy"
+        ],
+        "projectType": "native",
+        "resources": {
+            "media": []
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "basalt"
+        ],
+        "uuid": "2d1431e5-c9bb-4612-85a7-262b032f8492",
+        "watchapp": {
+            "watchface": true
+        }
     },
-    "messageKeys": [
-      "dummy"
-    ],
-    "resources": {
-      "media": []
-    }
-  },
-  "capabilities": [ "health" ]
+    "version": "1.0.0"
 }

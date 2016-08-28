@@ -17,7 +17,6 @@
 #define SUB_TEXT_HEIGHT 30
 #define TITLE_TEXT_HEIGHT 50
 
-
 // All of the global variables
 static Window *s_main_window;
 static TextLayer *s_time_text_layer, *s_date_text_layer, *s_steps_text_layer;
@@ -293,17 +292,8 @@ static void steps_proc_layer(Layer *layer, GContext *ctx)
 
   float l = 1.0f*s_steps_level/s_steps_average;
 
-  graphics_context_set_fill_color(ctx, GColorShockingPink);
+  graphics_context_set_fill_color(ctx, l >= 1.0 ? GColorMalachite : GColorShockingPink);
   graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, SUB_TEXT_HEIGHT/2, 0, DEG_TO_TRIGANGLE(l*360));
-
-  // Draw the bar
-  // if (l >= 1.0) {
-  //   graphics_context_set_fill_color(ctx, GColorMalachite);
-  //   graphics_fill_rect(ctx, GRect(0, bounds.size.h-5, bounds.size.w, 5), 0, GCornerNone);
-  // } else {
-  //   graphics_context_set_fill_color(ctx, GColorLavenderIndigo);
-  //   graphics_fill_rect(ctx, GRect(0, bounds.size.h-5, l*bounds.size.w, 5), 0, GCornerNone);
-  // }
 }
 
 /**
@@ -328,7 +318,6 @@ static void update_time()
   static char date_buffer[16];
   strftime(date_buffer, sizeof(date_buffer), "%a %d %b", tick_time);
   text_layer_set_text(s_date_text_layer, date_buffer);
-
 
   // Now for the health data
 
