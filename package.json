@@ -1,6 +1,8 @@
 {
     "author": "Merlin",
-    "dependencies": {},
+    "dependencies": {
+        "pebble-clay": "^1.0.2"
+    },
     "keywords": [
         "pebble-app"
     ],
@@ -12,14 +14,15 @@
         "displayName": "nixi",
         "enableMultiJS": true,
         "messageKeys": [
-            "hourColour",
-            "batteryColour",
-            "minuteColour",
-            "timeColour",
-            "backgroundColour",
-            "dateColour",
-            "stepColour",
-            "stepPieColour"
+            "HourColour",
+            "BatteryColour",
+            "MinuteColour",
+            "TimeColour",
+            "BackgroundColour",
+            "DateColour",
+            "StepColour",
+            "StepPieColour",
+            "BluetoohColour"
         ],
         "projectType": "native",
         "resources": {
