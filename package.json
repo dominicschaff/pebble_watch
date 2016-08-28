@@ -12,7 +12,14 @@
         "displayName": "nixi",
         "enableMultiJS": true,
         "messageKeys": [
-            "dummy"
+            "hourColour",
+            "batteryColour",
+            "minuteColour",
+            "timeColour",
+            "backgroundColour",
+            "dateColour",
+            "stepColour",
+            "stepPieColour"
         ],
         "projectType": "native",
         "resources": {
