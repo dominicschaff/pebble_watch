@@ -17,31 +17,37 @@ module.exports = [
       {
         "type": "color",
         "messageKey": "BatteryColour",
-        "defaultValue": "0x000000",
+        "defaultValue": "0x00055FF",
         "label": "Battery Bar"
       },
       {
         "type": "color",
         "messageKey": "HourColour",
-        "defaultValue": "0x000000",
+        "defaultValue": "0x55AAFF",
         "label": "Hour Bar"
       },
       {
         "type":"color",
         "messageKey": "MinuteColour",
-        "defaultValue": "0x000000",
+        "defaultValue": "0xFF00FF",
         "label": "Minute Bar"
       },
       {
         "type": "color",
         "messageKey": "StepPieColour",
-        "defaultValue": "0x000000",
+        "defaultValue": "0xFF55FF",
         "label": "Step Counter Pie Chart"
       },
       {
         "type": "color",
+        "messageKey": "StepPieCompleteColour",
+        "defaultValue": "0x00FF5",
+        "label": "Step Counter Goal Complete
+      },
+      {
+        "type": "color",
         "messageKey": "BluetoothColour",
-        "defaultValue": "0x000000",
+        "defaultValue": "0xFF0000",
         "label": "Bluetooth Disconnect"
       },
       {

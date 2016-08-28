@@ -22,6 +22,7 @@
             "DateColour",
             "StepColour",
             "StepPieColour",
+            "StepPieCompleteColour",
             "BluetoohColour"
         ],
         "projectType": "native",
