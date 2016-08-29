@@ -1,11 +1,5 @@
 #include <pebble.h>
 
-// Screen sizing for pebble time
-#define WIDTHf 144.0f
-#define WIDTH 144
-#define HEIGHTf 168.0f
-#define HEIGHT 168
-
 // Default value
 #define STEPS_DEFAULT 7500
 
@@ -128,7 +122,7 @@ static void main_window_load(Window *window)
   add_text_layer(window_layer, s_date_text_layer, GTextAlignmentRight);
 
   // Create the steps display
-  s_steps_text_layer = text_layer_create(GRect(0, HEIGHT - SUB_TEXT_HEIGHT, bounds.size.w, SUB_TEXT_HEIGHT));
+  s_steps_text_layer = text_layer_create(GRect(0, bounds.size.h - SUB_TEXT_HEIGHT, bounds.size.w, SUB_TEXT_HEIGHT));
   text_layer_set_font(s_steps_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
   add_text_layer(window_layer, s_steps_text_layer, GTextAlignmentLeft);
 
@@ -137,11 +131,11 @@ static void main_window_load(Window *window)
   text_layer_set_font(s_steps_perc_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
   add_text_layer(window_layer, s_steps_perc_text_layer, GTextAlignmentRight);
 
-  s_battery_text_layer = text_layer_create(GRect(0, 0, WIDTH, SUB_TEXT_HEIGHT));
+  s_battery_text_layer = text_layer_create(GRect(0, 0, bounds.size.w, SUB_TEXT_HEIGHT));
   text_layer_set_font(s_battery_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
   add_text_layer(window_layer, s_battery_text_layer, GTextAlignmentLeft);
 
-  s_steps_now_text_layer = text_layer_create(GRect(0, 0, WIDTH, SUB_TEXT_HEIGHT));
+  s_steps_now_text_layer = text_layer_create(GRect(0, 0, bounds.size.w, SUB_TEXT_HEIGHT));
   text_layer_set_font(s_steps_now_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
   add_text_layer(window_layer, s_steps_now_text_layer, GTextAlignmentRight);
 }
@@ -192,7 +186,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed)
 static void battery_callback(BatteryChargeState state)
 {
   static char battery_buffer[10];
-  snprintf(battery_buffer, sizeof(battery_buffer), "%d%%", state.charge_percent);
+  snprintf(battery_buffer, sizeof(battery_buffer), "%d%% %s", state.charge_percent, state.is_charging ? "+" : "");
   text_layer_set_text(s_battery_text_layer, battery_buffer);
 }
 
