@@ -101,6 +101,11 @@ static void main_window_load(Window *window)
   layer_set_update_proc(s_bluetooth_layer, bluetooth_update_proc);
   layer_add_child(window_get_root_layer(window), s_bluetooth_layer);
 
+  // Create hour meter Layer
+  s_time_layer = layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
+  layer_set_update_proc(s_time_layer, time_update_proc);
+  layer_add_child(window_get_root_layer(window), s_time_layer);
+
   // Create steps meter Layer
   s_steps_layer = layer_create(GRect(0, 0, hw, hh));
   layer_set_update_proc(s_steps_layer, steps_proc_layer);
@@ -110,11 +115,6 @@ static void main_window_load(Window *window)
   s_steps_now_layer = layer_create(GRect(hw, 0, hw, hh));
   layer_set_update_proc(s_steps_now_layer, steps_now_proc_layer);
   layer_add_child(window_get_root_layer(window), s_steps_now_layer);
-
-  // Create hour meter Layer
-  s_time_layer = layer_create(GRect(0, hh, bounds.size.w, hh));
-  layer_set_update_proc(s_time_layer, time_update_proc);
-  layer_add_child(window_get_root_layer(window), s_time_layer);
 
   // Create the time display
   // I can't seem to calculate 52 from the other values, I will find a way (or at least in a way that makes sense)
