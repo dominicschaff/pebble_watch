@@ -93,22 +93,22 @@ static void main_window_load(Window *window)
   // Create bluetooth meter Layer
   s_bluetooth_layer = layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
   layer_set_update_proc(s_bluetooth_layer, bluetooth_update_proc);
-  layer_add_child(window_get_root_layer(window), s_bluetooth_layer);
+  layer_add_child(window_layer, s_bluetooth_layer);
 
   // Create hour meter Layer
   s_time_layer = layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
   layer_set_update_proc(s_time_layer, time_update_proc);
-  layer_add_child(window_get_root_layer(window), s_time_layer);
+  layer_add_child(window_layer, s_time_layer);
 
   // Create steps meter Layer
   s_steps_layer = layer_create(GRect(0, 0, hw, hh));
   layer_set_update_proc(s_steps_layer, steps_proc_layer);
-  layer_add_child(window_get_root_layer(window), s_steps_layer);
+  layer_add_child(window_layer, s_steps_layer);
 
   // Create steps meter Layer
   s_steps_now_layer = layer_create(GRect(hw, 0, hw, hh));
   layer_set_update_proc(s_steps_now_layer, steps_now_proc_layer);
-  layer_add_child(window_get_root_layer(window), s_steps_now_layer);
+  layer_add_child(window_layer, s_steps_now_layer);
 
   // Create the time display
   // I can't seem to calculate 52 from the other values, I will find a way (or at least in a way that makes sense)
@@ -116,8 +116,9 @@ static void main_window_load(Window *window)
   text_layer_set_font(s_time_text_layer, fonts_get_system_font(FONT_KEY_ROBOTO_BOLD_SUBSET_49));
   add_text_layer(window_layer, s_time_text_layer, GTextAlignmentCenter);
 
+
   // Create the date display
-  s_date_text_layer = text_layer_create(GRect(0, 52 + TITLE_TEXT_HEIGHT, bounds.size.w, SUB_TEXT_HEIGHT));
+  s_date_text_layer = text_layer_create(GRect(0, 45 + TITLE_TEXT_HEIGHT, bounds.size.w, SUB_TEXT_HEIGHT));
   text_layer_set_font(s_date_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
   add_text_layer(window_layer, s_date_text_layer, GTextAlignmentRight);
 
@@ -185,7 +186,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed)
  */
 static void battery_callback(BatteryChargeState state)
 {
-  static char battery_buffer[10];
+  static char battery_buffer[8];
   snprintf(battery_buffer, sizeof(battery_buffer), "%d%% %s", state.charge_percent, state.is_charging ? "+" : "");
   text_layer_set_text(s_battery_text_layer, battery_buffer);
 }
@@ -195,11 +196,11 @@ static void battery_callback(BatteryChargeState state)
  *
  * @param connected Whether we are connected or not
  */
-static void bluetooth_callback(bool connected) {
+static void bluetooth_callback(bool connected)
+{
   layer_set_hidden(s_bluetooth_layer, connected);
-  if(!connected) {
+  if(!connected)
     vibes_double_pulse();
-  }
 }
 
 /**
@@ -225,10 +226,10 @@ static void time_update_proc(Layer *layer, GContext *ctx)
   GRect bounds = layer_get_bounds(layer);
 
   graphics_context_set_fill_color(ctx, GColorPictonBlue);
-  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS, 0, DEG_TO_TRIGANGLE(s_hour_level * 15));
+  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS, 0, s_hour_level * DEG_TO_TRIGANGLE(15));
 
   graphics_context_set_fill_color(ctx, GColorMagenta);
-  graphics_fill_radial(ctx, GRect(bounds.size.w>>3, bounds.size.h>>3, (3*bounds.size.w)>>2, (3*bounds.size.h)>>2), GOvalScaleModeFitCircle, PIE_THICKNESS, 0, DEG_TO_TRIGANGLE(s_minute_level * 6));
+  graphics_fill_radial(ctx, GRect(bounds.size.w >> 3, bounds.size.h >> 3, (3 * bounds.size.w) >> 2, (3 * bounds.size.h) >> 2), GOvalScaleModeFitCircle, PIE_THICKNESS, 0, s_minute_level * DEG_TO_TRIGANGLE(6));
 }
 
 /**
@@ -244,12 +245,12 @@ static void steps_proc_layer(Layer *layer, GContext *ctx)
   float l = 1.0f * s_steps_level / s_steps_average;
 
   graphics_context_set_fill_color(ctx, l >= 1.0 ? GColorMalachite : GColorShockingPink);
-  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS, 0, DEG_TO_TRIGANGLE(l*360));
+  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS, 0, l * DEG_TO_TRIGANGLE(360));
 
   l = 1.0f * s_steps_average_now / s_steps_average;
   if (l <= 1.0) {
     graphics_context_set_fill_color(ctx, GColorBlack);
-    graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS<<1, DEG_TO_TRIGANGLE(l*360), DEG_TO_TRIGANGLE(l*360+5));
+    graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS << 1, l * DEG_TO_TRIGANGLE(360), l * DEG_TO_TRIGANGLE(360) + DEG_TO_TRIGANGLE(5));
   }
 }
 
@@ -263,15 +264,9 @@ static void steps_now_proc_layer(Layer *layer, GContext *ctx)
 {
   GRect bounds = layer_get_bounds(layer);
 
-  float l = 1.0f*s_steps_level/s_steps_average_now;
+  float l = 1.0f * s_steps_level / s_steps_average_now;
 
-  if (l > 1.3) {
-    l = 1.3;
-  }
-  if (l < 0.7) {
-    l = 0.7;
-  }
-  l = (l - 1.0) * 180;
+  l = DEG_TO_TRIGANGLE((((l > 1.3) ? 1.3 : ((l < 0.7) ? 0.7 : l)) - 1.0) * 180);
 
   // draw the meters:
   graphics_context_set_fill_color(ctx, GColorFolly);
@@ -281,7 +276,7 @@ static void steps_now_proc_layer(Layer *layer, GContext *ctx)
   graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS, DEG_TO_TRIGANGLE(310), DEG_TO_TRIGANGLE(320));
 
   graphics_context_set_fill_color(ctx, GColorBlack);
-  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS<<1, DEG_TO_TRIGANGLE(l), DEG_TO_TRIGANGLE(l + 5));
+  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS << 1, l, l + DEG_TO_TRIGANGLE(5));
 }
 
 /**
@@ -312,28 +307,26 @@ static void update_time()
   text_layer_set_text(s_date_text_layer, date_buffer);
 
   s_steps_average = (int)health_service_sum_averaged(HealthMetricStepCount, time_start_of_today(), time_start_of_today() + SECONDS_PER_DAY, HealthServiceTimeScopeDaily);
-  if (s_steps_average < 1) {
+  if (s_steps_average < 1)
     s_steps_average = STEPS_DEFAULT;
-  }
 
   s_steps_average_now = (int)health_service_sum_averaged(HealthMetricStepCount, time_start_of_today(), time(NULL), HealthServiceTimeScopeDaily);
-  if (s_steps_average_now < 1) {
+  if (s_steps_average_now < 1)
     s_steps_average_now = STEPS_DEFAULT;
-  }
 
   s_steps_level = (int)health_service_sum_today(HealthMetricStepCount);
-  int step_perc = (int)(100.0f*s_steps_level/s_steps_average);
-  if (s_steps_level > 1000) {
-    snprintf(steps_buffer, sizeof(steps_buffer), "%d,%03d", s_steps_level/1000, s_steps_level%1000);
-  } else {
+
+  if (s_steps_level > 1000)
+    snprintf(steps_buffer, sizeof(steps_buffer), "%d,%03d", s_steps_level / 1000, s_steps_level % 1000);
+  else
     snprintf(steps_buffer, sizeof(steps_buffer), "%d", s_steps_level);
-  }
-  if (s_steps_average_now > 1000) {
-    snprintf(steps_now_buffer, sizeof(steps_now_buffer), "%d,%03d", s_steps_average_now/1000, s_steps_average_now%1000);
-  } else {
+
+  if (s_steps_average_now > 1000)
+    snprintf(steps_now_buffer, sizeof(steps_now_buffer), "%d,%03d", s_steps_average_now / 1000, s_steps_average_now % 1000);
+  else
     snprintf(steps_now_buffer, sizeof(steps_now_buffer), "%d", s_steps_average_now);
-  }
-  snprintf(steps_perc_buffer, sizeof(steps_buffer), "%d%%", step_perc);
+
+  snprintf(steps_perc_buffer, sizeof(steps_perc_buffer), "%d%%", (int)(100.0f * s_steps_level / s_steps_average));
 
   // Set the steps display
   text_layer_set_text(s_steps_text_layer, steps_buffer);
