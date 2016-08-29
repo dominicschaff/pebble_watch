@@ -321,38 +321,22 @@ static void update_time()
 
   // Now for the health data
 
-  // What metrics we want, and the averaging we want:
-  const HealthMetric metric = HealthMetricStepCount;
-  const HealthServiceTimeScope scope = HealthServiceTimeScopeDaily;
-
-  // We want from midnight to now
-  const time_t start = time_start_of_today();
-  const time_t end = time(NULL);
-
-
   static char steps_buffer[20];
 
   // Can we get the info, if we can get it:
-  HealthServiceAccessibilityMask mask =
-            health_service_metric_averaged_accessible(metric, start, end, scope);
-  if(mask & HealthServiceAccessibilityMaskAvailable) {
-    HealthValue average = health_service_sum_averaged(metric, start, end, scope);
-
-    s_steps_average = (int)average;
-    if (s_steps_average < 1000) {
-      s_steps_average = STEPS_DEFAULT;
-    }
+  s_steps_average = (int)health_service_sum_averaged(HealthMetricStepCount, time_start_of_today(), time(NULL), HealthServiceTimeScopeDaily);
+  if (s_steps_average < 1) {
+    s_steps_average = STEPS_DEFAULT;
   }
 
   // Can we get the info, if we can get it:
-  mask = health_service_metric_accessible(metric,
-    start, end);
-  if(mask & HealthServiceAccessibilityMaskAvailable) {
-    s_steps_level = (int)health_service_sum_today(metric);
-    snprintf(steps_buffer, sizeof(steps_buffer), "%d [%d%%]", s_steps_level, (int)(100.0f*s_steps_level/s_steps_average));
+  s_steps_level = (int)health_service_sum_today(HealthMetricStepCount);
+  if (s_steps_level > 1000) {
+    snprintf(steps_buffer, sizeof(steps_buffer), "%d,%03d [%d%%]", s_steps_level/1000, s_steps_level%1000, (int)(100.0f*s_steps_level/s_steps_average));
   } else {
-    snprintf(steps_buffer, sizeof(steps_buffer), "Unknown steps");
+    snprintf(steps_buffer, sizeof(steps_buffer), "%d [%d%%]", s_steps_level, (int)(100.0f*s_steps_level/s_steps_average));
   }
+  
 
   // Set the steps display
   text_layer_set_text(s_steps_text_layer, steps_buffer);
