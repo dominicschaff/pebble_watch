@@ -339,7 +339,7 @@ static void update_time()
     HealthValue average = health_service_sum_averaged(metric, start, end, scope);
 
     s_steps_average = (int)average;
-    if (s_steps_average < 1) {
+    if (s_steps_average < 1000) {
       s_steps_average = STEPS_DEFAULT;
     }
   }
