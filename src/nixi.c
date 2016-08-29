@@ -19,7 +19,7 @@
 
 // All of the global variables
 static Window *s_main_window;
-static TextLayer *s_time_text_layer, *s_date_text_layer, *s_steps_text_layer;
+static TextLayer *s_time_text_layer, *s_date_text_layer, *s_steps_text_layer, *s_steps_perc_text_layer;
 static int s_battery_level, s_hour_level, s_minute_level, s_steps_level, s_steps_average;
 static Layer *s_battery_layer, *s_bluetooth_layer, *s_hour_layer, *s_minute_layer, *s_steps_layer;
 static bool bluetooth_connected;
@@ -39,6 +39,8 @@ static void hour_update_proc(Layer *layer, GContext *ctx);
 static void minute_proc_layer(Layer *layer, GContext *ctx);
 static void steps_proc_layer(Layer *layer, GContext *ctx);
 static void add_text_layer(Layer *window_layer, TextLayer *text_layer);
+static void add_text_layer_right(Layer *window_layer, TextLayer *text_layer);
+static void add_text_layer_left(Layer *window_layer, TextLayer *text_layer);
 
 /**
  * Main function, the watch runs this function
@@ -94,25 +96,25 @@ static void main_window_load(Window *window)
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
-  // Create hour meter Layer
-  s_hour_layer = layer_create(GRect(0, BATTERY_HEIGHT, TIME_BAR_WIDTH, HEIGHT));
-  layer_set_update_proc(s_hour_layer, hour_update_proc);
-  layer_add_child(window_get_root_layer(window), s_hour_layer);
-
-  // Create minute meter Layer
-  s_minute_layer = layer_create(GRect(WIDTH - TIME_BAR_WIDTH, BATTERY_HEIGHT, TIME_BAR_WIDTH, HEIGHT));
-  layer_set_update_proc(s_minute_layer, minute_proc_layer);
-  layer_add_child(window_get_root_layer(window), s_minute_layer);
-
   // Create bluetooth meter Layer
-  s_bluetooth_layer = layer_create(GRect(TIME_BAR_WIDTH, HEIGHT/2 - TITLE_TEXT_HEIGHT/2, WIDTH - TIME_BAR_WIDTH*2, TITLE_TEXT_HEIGHT));
+  s_bluetooth_layer = layer_create(GRect(TIME_BAR_WIDTH, bounds.size.w/2 - TITLE_TEXT_HEIGHT/2, WIDTH - TIME_BAR_WIDTH*2, TITLE_TEXT_HEIGHT));
   layer_set_update_proc(s_bluetooth_layer, bluetooth_update_proc);
   layer_add_child(window_get_root_layer(window), s_bluetooth_layer);
 
   // Create steps meter Layer
-  s_steps_layer = layer_create(GRect(TIME_BAR_WIDTH, BATTERY_HEIGHT + PADDING, WIDTH - TIME_BAR_WIDTH*2, SUB_TEXT_HEIGHT + PADDING*4));
+  s_steps_layer = layer_create(GRect(TIME_BAR_WIDTH, BATTERY_HEIGHT + PADDING, bounds.size.w - TIME_BAR_WIDTH*2, SUB_TEXT_HEIGHT + PADDING*4));
   layer_set_update_proc(s_steps_layer, steps_proc_layer);
   layer_add_child(window_get_root_layer(window), s_steps_layer);
+
+  // Create hour meter Layer
+  s_hour_layer = layer_create(GRect(0, HEIGHT/2, bounds.size.w/2, HEIGHT/2));
+  layer_set_update_proc(s_hour_layer, hour_update_proc);
+  layer_add_child(window_get_root_layer(window), s_hour_layer);
+
+  // Create minute meter Layer
+  s_minute_layer = layer_create(GRect(WIDTH/2, HEIGHT/2, bounds.size.w/2, HEIGHT/2));
+  layer_set_update_proc(s_minute_layer, minute_proc_layer);
+  layer_add_child(window_get_root_layer(window), s_minute_layer);
 
   // Create the time display
   // I can't seem to calculate 52 from the other values, I will find a way (or at least in a way that makes sense)
@@ -121,14 +123,19 @@ static void main_window_load(Window *window)
   add_text_layer(window_layer, s_time_text_layer);
 
   // Create the date display
-  s_date_text_layer = text_layer_create(GRect(0, HEIGHT - SUB_TEXT_HEIGHT, WIDTH, SUB_TEXT_HEIGHT));
+  s_date_text_layer = text_layer_create(GRect(0, 52 + TITLE_TEXT_HEIGHT, WIDTH, SUB_TEXT_HEIGHT));
   text_layer_set_font(s_date_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
-  add_text_layer(window_layer, s_date_text_layer);
+  add_text_layer_right(window_layer, s_date_text_layer);
 
   // Create the steps display
-  s_steps_text_layer = text_layer_create(GRect(0, BATTERY_HEIGHT, WIDTH, SUB_TEXT_HEIGHT));
+  s_steps_text_layer = text_layer_create(GRect(0, HEIGHT - SUB_TEXT_HEIGHT, WIDTH, SUB_TEXT_HEIGHT));
   text_layer_set_font(s_steps_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
-  add_text_layer(window_layer, s_steps_text_layer);
+  add_text_layer_left(window_layer, s_steps_text_layer);
+
+  // Create the steps percentage display
+  s_steps_perc_text_layer = text_layer_create(GRect(0, HEIGHT - SUB_TEXT_HEIGHT, WIDTH, SUB_TEXT_HEIGHT));
+  text_layer_set_font(s_steps_perc_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  add_text_layer_right(window_layer, s_steps_perc_text_layer);
 
   // Create battery meter Layer
   s_battery_layer = layer_create(GRect(0, 0, WIDTH, BATTERY_HEIGHT));
@@ -145,6 +152,24 @@ static void add_text_layer(Layer *window_layer, TextLayer *text_layer)
   layer_add_child(window_layer, text_layer_get_layer(text_layer));
 }
 
+static void add_text_layer_right(Layer *window_layer, TextLayer *text_layer)
+{
+  text_layer_set_background_color(text_layer, GColorClear);
+  text_layer_set_text_color(text_layer, GColorBlack);
+  text_layer_set_text(text_layer, "--");
+  text_layer_set_text_alignment(text_layer, GTextAlignmentRight);
+  layer_add_child(window_layer, text_layer_get_layer(text_layer));
+}
+
+static void add_text_layer_left(Layer *window_layer, TextLayer *text_layer)
+{
+  text_layer_set_background_color(text_layer, GColorClear);
+  text_layer_set_text_color(text_layer, GColorBlack);
+  text_layer_set_text(text_layer, "--");
+  text_layer_set_text_alignment(text_layer, GTextAlignmentLeft);
+  layer_add_child(window_layer, text_layer_get_layer(text_layer));
+}
+
 /**
  * Destroy the window
  *
@@ -155,6 +180,7 @@ static void main_window_unload(Window *window)
   text_layer_destroy(s_time_text_layer);
   text_layer_destroy(s_date_text_layer);
   text_layer_destroy(s_steps_text_layer);
+  text_layer_destroy(s_steps_perc_text_layer);
   layer_destroy(s_battery_layer);
   layer_destroy(s_bluetooth_layer);
   layer_destroy(s_hour_layer);
@@ -251,10 +277,10 @@ static void hour_update_proc(Layer *layer, GContext *ctx)
   // Draw the background
   graphics_context_set_fill_color(ctx, GColorWhite);
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
-
-  // Draw the bar
+  float l = s_minute_level / 24.0f;
+  
   graphics_context_set_fill_color(ctx, GColorPictonBlue);
-  graphics_fill_rect(ctx, GRect(0, HEIGHTf - (int)(float)(((float)s_hour_level / 24.0F) * bounds.size.h), bounds.size.w, HEIGHTf), 0, GCornerNone);
+  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, 20, 0, DEG_TO_TRIGANGLE(l*360));
 }
 
 /**
@@ -270,10 +296,11 @@ static void minute_proc_layer(Layer *layer, GContext *ctx)
   // Draw the background
   graphics_context_set_fill_color(ctx, GColorWhite);
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
-
-  // Draw the bar
+  
+  float l = s_minute_level / 60.0f;
+  
   graphics_context_set_fill_color(ctx, GColorMagenta);
-  graphics_fill_rect(ctx, GRect(0, HEIGHTf - (int)(float)(((float)s_minute_level / 60.0F) * bounds.size.h), bounds.size.w, HEIGHTf), 0, GCornerNone);
+  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, 20, 0, DEG_TO_TRIGANGLE(l*360));
 }
 
 /**
@@ -321,7 +348,8 @@ static void update_time()
 
   // Now for the health data
 
-  static char steps_buffer[20];
+  static char steps_buffer[10];
+  static char steps_perc_buffer[10];
 
   // Can we get the info, if we can get it:
   s_steps_average = (int)health_service_sum_averaged(HealthMetricStepCount, time_start_of_today(), time_start_of_today() + SECONDS_PER_DAY, HealthServiceTimeScopeDaily);
@@ -331,15 +359,22 @@ static void update_time()
 
   // Can we get the info, if we can get it:
   s_steps_level = (int)health_service_sum_today(HealthMetricStepCount);
+  int step_perc = (int)(100.0f*s_steps_level/s_steps_average);
   if (s_steps_level > 1000) {
-    snprintf(steps_buffer, sizeof(steps_buffer), "%d,%03d [%d%%]", s_steps_level/1000, s_steps_level%1000, (int)(100.0f*s_steps_level/s_steps_average));
+    snprintf(steps_buffer, sizeof(steps_buffer), "%d,%03d", s_steps_level/1000, s_steps_level%1000);
   } else {
-    snprintf(steps_buffer, sizeof(steps_buffer), "%d [%d%%]", s_steps_level, (int)(100.0f*s_steps_level/s_steps_average));
+    snprintf(steps_buffer, sizeof(steps_buffer), "%d", s_steps_level);
+  }
+  if (step_perc > 1000) {
+    snprintf(steps_perc_buffer, sizeof(steps_buffer), "%d,%03d%%", step_perc/1000, step_perc%1000);
+  } else {
+    snprintf(steps_perc_buffer, sizeof(steps_buffer), "%d%%", step_perc);
   }
   
 
   // Set the steps display
   text_layer_set_text(s_steps_text_layer, steps_buffer);
+  text_layer_set_text(s_steps_perc_text_layer, steps_perc_buffer);
 
   // Mark the layers as dirty
   layer_mark_dirty(s_hour_layer);
