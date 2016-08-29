@@ -12,7 +12,6 @@
 // Piece Sizing
 #define BATTERY_HEIGHT 5
 #define TIME_BAR_WIDTH 20
-#define BT_ERROR_THICKNESS 5
 #define PADDING 5
 #define SUB_TEXT_HEIGHT 30
 #define TITLE_TEXT_HEIGHT 50
