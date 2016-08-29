@@ -324,7 +324,7 @@ static void update_time()
   static char steps_buffer[20];
 
   // Can we get the info, if we can get it:
-  s_steps_average = (int)health_service_sum_averaged(HealthMetricStepCount, time_start_of_today(), time(NULL), HealthServiceTimeScopeDaily);
+  s_steps_average = (int)health_service_sum_averaged(HealthMetricStepCount, time_start_of_today(), time_start_of_today() + SECONDS_PER_DAY, HealthServiceTimeScopeDaily);
   if (s_steps_average < 1) {
     s_steps_average = STEPS_DEFAULT;
   }
