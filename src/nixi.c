@@ -288,7 +288,8 @@ static void update_time()
   static char date_buffer[16];
   static char steps_buffer[10];
   static char steps_perc_buffer[10];
-  static char steps_now_buffer[10];
+  static char steps_now_buffer[15];
+  static char steps_average_buffer[10];
 
   // Get the current time
   time_t temp = time(NULL);
@@ -321,10 +322,15 @@ static void update_time()
   else
     snprintf(steps_buffer, sizeof(steps_buffer), "%d", s_steps_level);
 
-  if (s_steps_average_now > 1000)
-    snprintf(steps_now_buffer, sizeof(steps_now_buffer), "%d,%03d", s_steps_average_now / 1000, s_steps_average_now % 1000);
+  if (s_steps_average > 1000)
+    snprintf(steps_average_buffer, sizeof(steps_average_buffer), "%d,%03d", s_steps_average / 1000, s_steps_average % 1000);
   else
-    snprintf(steps_now_buffer, sizeof(steps_now_buffer), "%d", s_steps_average_now);
+    snprintf(steps_average_buffer, sizeof(steps_average_buffer), "%d", s_steps_average);
+
+  if (s_steps_average_now > 1000)
+    snprintf(steps_now_buffer, sizeof(steps_now_buffer), "%d,%03d/%s", s_steps_average_now / 1000, s_steps_average_now % 1000, steps_average_buffer);
+  else
+    snprintf(steps_now_buffer, sizeof(steps_now_buffer), "%d/%s", s_steps_average_now, steps_average_buffer);
 
   snprintf(steps_perc_buffer, sizeof(steps_perc_buffer), "%d%%", (int)(100.0f * s_steps_level / s_steps_average));
 
