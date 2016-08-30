@@ -12,10 +12,10 @@
 static Window *s_main_window;
 
 static TextLayer *s_time_text_layer, *s_date_text_layer;
-static TextLayer *s_steps_text_layer, *s_steps_perc_text_layer, *s_steps_now_text_layer;
+static TextLayer *s_steps_text_layer, *s_steps_perc_text_layer, *s_steps_now_average_text_layer, *s_steps_average_text_layer;
 static TextLayer *s_battery_text_layer;
 
-static int s_hour_level, s_minute_level, s_steps_level, s_steps_average, s_steps_average_now;
+static int s_hour_level, s_minute_level, s_steps_level, s_steps_average, s_steps_average_now, s_battery_level;
 static Layer *s_bluetooth_layer, *s_time_layer, *s_steps_layer, *s_steps_now_layer;
 
 // All functions used
@@ -132,13 +132,20 @@ static void main_window_load(Window *window)
   text_layer_set_font(s_steps_perc_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
   add_text_layer(window_layer, s_steps_perc_text_layer, GTextAlignmentRight);
 
+  // Create the battery percentage display
   s_battery_text_layer = text_layer_create(GRect(0, 0, bounds.size.w, SUB_TEXT_HEIGHT));
-  text_layer_set_font(s_battery_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+  text_layer_set_font(s_battery_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
   add_text_layer(window_layer, s_battery_text_layer, GTextAlignmentLeft);
 
-  s_steps_now_text_layer = text_layer_create(GRect(0, 0, bounds.size.w, SUB_TEXT_HEIGHT));
-  text_layer_set_font(s_steps_now_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
-  add_text_layer(window_layer, s_steps_now_text_layer, GTextAlignmentRight);
+  // Create the current average steps display
+  s_steps_now_average_text_layer = text_layer_create(GRect(0, bounds.size.h - SUB_TEXT_HEIGHT - 13, bounds.size.w, SUB_TEXT_HEIGHT));
+  text_layer_set_font(s_steps_now_average_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+  add_text_layer(window_layer, s_steps_now_average_text_layer, GTextAlignmentLeft);
+
+  // Create the average steps display
+  s_steps_average_text_layer = text_layer_create(GRect(0, bounds.size.h - SUB_TEXT_HEIGHT - 13, bounds.size.w, SUB_TEXT_HEIGHT));
+  text_layer_set_font(s_steps_average_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+  add_text_layer(window_layer, s_steps_average_text_layer, GTextAlignmentRight);
 }
 
 static void add_text_layer(Layer *window_layer, TextLayer *text_layer, GTextAlignment alignment)
@@ -161,7 +168,8 @@ static void main_window_unload(Window *window)
   text_layer_destroy(s_steps_text_layer);
   text_layer_destroy(s_steps_perc_text_layer);
   text_layer_destroy(s_battery_text_layer);
-  text_layer_destroy(s_steps_now_text_layer);
+  text_layer_destroy(s_steps_now_average_text_layer);
+  text_layer_destroy(s_steps_average_text_layer);
   layer_destroy(s_bluetooth_layer);
   layer_destroy(s_time_layer);
   layer_destroy(s_steps_layer);
@@ -187,8 +195,10 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed)
 static void battery_callback(BatteryChargeState state)
 {
   static char battery_buffer[8];
+  s_battery_level = state.charge_percent;
   snprintf(battery_buffer, sizeof(battery_buffer), "%d%% %s", state.charge_percent, state.is_charging ? "+" : "");
   text_layer_set_text(s_battery_text_layer, battery_buffer);
+  update_time();
 }
 
 /**
@@ -230,6 +240,9 @@ static void time_update_proc(Layer *layer, GContext *ctx)
 
   graphics_context_set_fill_color(ctx, GColorMagenta);
   graphics_fill_radial(ctx, GRect(bounds.size.w >> 3, bounds.size.h >> 3, (3 * bounds.size.w) >> 2, (3 * bounds.size.h) >> 2), GOvalScaleModeFitCircle, PIE_THICKNESS, 0, s_minute_level * DEG_TO_TRIGANGLE(6));
+
+  graphics_context_set_fill_color(ctx, GColorLavenderIndigo);
+  graphics_fill_radial(ctx, GRect((bounds.size.w >> 3) + PIE_THICKNESS, (bounds.size.h >> 3) + PIE_THICKNESS, ((3 * bounds.size.w) >> 2) - (PIE_THICKNESS << 1), ((3 * bounds.size.h) >> 2) - (PIE_THICKNESS << 1)), GOvalScaleModeFitCircle, PIE_THICKNESS >> 1, 0, s_battery_level * DEG_TO_TRIGANGLE(3.6));
 }
 
 /**
@@ -245,12 +258,15 @@ static void steps_proc_layer(Layer *layer, GContext *ctx)
   float l = 1.0f * s_steps_level / s_steps_average;
 
   graphics_context_set_fill_color(ctx, l >= 1.0 ? GColorMalachite : GColorShockingPink);
-  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS, 0, l * DEG_TO_TRIGANGLE(360));
+  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS >> 1, 0, l * DEG_TO_TRIGANGLE(360));
 
   l = 1.0f * s_steps_average_now / s_steps_average;
   if (l <= 1.0) {
     graphics_context_set_fill_color(ctx, GColorBlack);
     graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS << 1, l * DEG_TO_TRIGANGLE(360), l * DEG_TO_TRIGANGLE(360) + DEG_TO_TRIGANGLE(5));
+  } else {
+    graphics_context_set_fill_color(ctx, GColorFolly);
+    graphics_fill_radial(ctx, GRect(bounds.size.w >> 3, bounds.size.h >> 3, (3 * bounds.size.w) >> 2, (3 * bounds.size.h) >> 2), GOvalScaleModeFitCircle, PIE_THICKNESS >> 2, 0, DEG_TO_TRIGANGLE(360));
   }
 }
 
@@ -323,21 +339,22 @@ static void update_time()
     snprintf(steps_buffer, sizeof(steps_buffer), "%d", s_steps_level);
 
   if (s_steps_average > 1000)
-    snprintf(steps_average_buffer, sizeof(steps_average_buffer), "%d,%03d", s_steps_average / 1000, s_steps_average % 1000);
+    snprintf(steps_average_buffer, sizeof(steps_average_buffer), "/%d,%03d", s_steps_average / 1000, s_steps_average % 1000);
   else
-    snprintf(steps_average_buffer, sizeof(steps_average_buffer), "%d", s_steps_average);
+    snprintf(steps_average_buffer, sizeof(steps_average_buffer), "/%d", s_steps_average);
 
   if (s_steps_average_now > 1000)
-    snprintf(steps_now_buffer, sizeof(steps_now_buffer), "%d,%03d/%s", s_steps_average_now / 1000, s_steps_average_now % 1000, steps_average_buffer);
+    snprintf(steps_now_buffer, sizeof(steps_now_buffer), "%d,%03d", s_steps_average_now / 1000, s_steps_average_now % 1000);
   else
-    snprintf(steps_now_buffer, sizeof(steps_now_buffer), "%d/%s", s_steps_average_now, steps_average_buffer);
+    snprintf(steps_now_buffer, sizeof(steps_now_buffer), "%d", s_steps_average_now);
 
   snprintf(steps_perc_buffer, sizeof(steps_perc_buffer), "%d%%", (int)(100.0f * s_steps_level / s_steps_average));
 
   // Set the steps display
   text_layer_set_text(s_steps_text_layer, steps_buffer);
   text_layer_set_text(s_steps_perc_text_layer, steps_perc_buffer);
-  text_layer_set_text(s_steps_now_text_layer, steps_now_buffer);
+  text_layer_set_text(s_steps_now_average_text_layer, steps_now_buffer);
+  text_layer_set_text(s_steps_average_text_layer, steps_average_buffer);
 
   // Mark the layers as dirty
   layer_mark_dirty(s_time_layer);
