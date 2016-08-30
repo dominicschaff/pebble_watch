@@ -101,12 +101,12 @@ static void main_window_load(Window *window)
   layer_add_child(window_layer, s_time_layer);
 
   // Create steps meter Layer
-  s_steps_layer = layer_create(GRect(0, 0, hw, hh));
+  s_steps_layer = layer_create(bounds);
   layer_set_update_proc(s_steps_layer, steps_proc_layer);
   layer_add_child(window_layer, s_steps_layer);
 
   // Create steps meter Layer
-  s_steps_now_layer = layer_create(GRect(hw, 0, hw, hh));
+  s_steps_now_layer = layer_create(GRect(0, 0, bounds.size.w, hh));
   layer_set_update_proc(s_steps_now_layer, steps_now_proc_layer);
   layer_add_child(window_layer, s_steps_now_layer);
 
@@ -135,7 +135,7 @@ static void main_window_load(Window *window)
   // Create the battery percentage display
   s_battery_text_layer = text_layer_create(GRect(0, 0, bounds.size.w, SUB_TEXT_HEIGHT));
   text_layer_set_font(s_battery_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
-  add_text_layer(window_layer, s_battery_text_layer, GTextAlignmentLeft);
+  add_text_layer(window_layer, s_battery_text_layer, GTextAlignmentRight);
 
   // Create the current average steps display
   s_steps_now_average_text_layer = text_layer_create(GRect(0, bounds.size.h - SUB_TEXT_HEIGHT - 13, bounds.size.w, SUB_TEXT_HEIGHT));
@@ -258,15 +258,14 @@ static void steps_proc_layer(Layer *layer, GContext *ctx)
   float l = 1.0f * s_steps_level / s_steps_average;
 
   graphics_context_set_fill_color(ctx, l >= 1.0 ? GColorMalachite : GColorShockingPink);
-  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS >> 1, 0, l * DEG_TO_TRIGANGLE(360));
+  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS >> 2, 0, l * DEG_TO_TRIGANGLE(360));
 
   l = 1.0f * s_steps_average_now / s_steps_average;
   if (l <= 1.0) {
-    graphics_context_set_fill_color(ctx, GColorBlack);
-    graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS << 1, l * DEG_TO_TRIGANGLE(360), l * DEG_TO_TRIGANGLE(360) + DEG_TO_TRIGANGLE(5));
-  } else {
-    graphics_context_set_fill_color(ctx, GColorFolly);
-    graphics_fill_radial(ctx, GRect(bounds.size.w >> 3, bounds.size.h >> 3, (3 * bounds.size.w) >> 2, (3 * bounds.size.h) >> 2), GOvalScaleModeFitCircle, PIE_THICKNESS >> 2, 0, DEG_TO_TRIGANGLE(360));
+    graphics_context_set_fill_color(ctx, GColorLavenderIndigo);
+    graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS, l * DEG_TO_TRIGANGLE(360) - DEG_TO_TRIGANGLE(2), l * DEG_TO_TRIGANGLE(360) + DEG_TO_TRIGANGLE(2));
+    graphics_context_set_fill_color(ctx, GColorImperialPurple);
+    graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS, l * DEG_TO_TRIGANGLE(360) - DEG_TO_TRIGANGLE(1), l * DEG_TO_TRIGANGLE(360) + DEG_TO_TRIGANGLE(1));
   }
 }
 
@@ -292,7 +291,7 @@ static void steps_now_proc_layer(Layer *layer, GContext *ctx)
   graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS, DEG_TO_TRIGANGLE(310), DEG_TO_TRIGANGLE(320));
 
   graphics_context_set_fill_color(ctx, GColorBlack);
-  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS << 1, l, l + DEG_TO_TRIGANGLE(5));
+  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS << 1, l - DEG_TO_TRIGANGLE(2), l + DEG_TO_TRIGANGLE(2));
 }
 
 /**
