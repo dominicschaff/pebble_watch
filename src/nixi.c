@@ -281,7 +281,7 @@ static void steps_now_proc_layer(Layer *layer, GContext *ctx)
 
   float l = 1.0f * s_steps_level / s_steps_average_now;
 
-  l = DEG_TO_TRIGANGLE((((l > 1.3) ? 1.3 : ((l < 0.7) ? 0.7 : l)) - 1.0) * 180);
+  l = DEG_TO_TRIGANGLE((((l > 1.3) ? 0.3 : ((l < 0.7) ? -0.3 : l - 1.0))) * 180);
 
   // draw the meters:
   graphics_context_set_fill_color(ctx, GColorFolly);
