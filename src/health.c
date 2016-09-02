@@ -26,7 +26,7 @@ void health_load_graphics(Window *window)
   layer_add_child(window_layer, s_steps_layer);
 
   // Create steps meter Layer
-  s_steps_now_layer = layer_create(GRect(0, 0, bounds.size.w, hh));
+  s_steps_now_layer = layer_create(GRect(bounds.size.w/3, hh + 3*(hh>>2), bounds.size.w/3, (hh-3*(hh>>2))));
   layer_set_update_proc(s_steps_now_layer, steps_now_proc_layer);
   layer_add_child(window_layer, s_steps_now_layer);
 }
@@ -161,17 +161,16 @@ static void steps_now_proc_layer(Layer *layer, GContext *ctx)
 
   float l = 1.0f * s_steps_level / s_steps_average_now;
 
-  l = DEG_TO_TRIGANGLE((((l > 1.3) ? 0.3 : ((l < 0.7) ? -0.3 : l - 1.0))) * 180);
+  l = (((l > 1.5) ? 0.5 : ((l < -0.5) ? -0.5 : l - 1.0)) + 0.5) * bounds.size.w;
 
   // draw the meters:
   graphics_context_set_fill_color(ctx, GColorFolly);
-  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS, DEG_TO_TRIGANGLE(0), DEG_TO_TRIGANGLE(5));
-  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS, DEG_TO_TRIGANGLE(355), DEG_TO_TRIGANGLE(360));
-  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS, DEG_TO_TRIGANGLE(40), DEG_TO_TRIGANGLE(50));
-  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS, DEG_TO_TRIGANGLE(310), DEG_TO_TRIGANGLE(320));
+  graphics_fill_rect(ctx, GRect(0, 0, 2, bounds.size.h), 0, GCornerNone);
+  graphics_fill_rect(ctx, GRect(bounds.size.w/2, 0, 2, bounds.size.h), 0, GCornerNone);
+  graphics_fill_rect(ctx, GRect(bounds.size.w-2, 0, 2, bounds.size.h), 0, GCornerNone);
 
   graphics_context_set_fill_color(ctx, GColorBlack);
-  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS << 1, l - DEG_TO_TRIGANGLE(2), l + DEG_TO_TRIGANGLE(2));
+  graphics_fill_rect(ctx, GRect(l-1, 0, 2, bounds.size.h), 0, GCornerNone);
 }
 
 
