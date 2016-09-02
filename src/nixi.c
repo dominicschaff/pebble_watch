@@ -89,8 +89,8 @@ static void main_window_load(Window *window)
   health_load_text(window);
 
   // Create the battery percentage display
-  s_battery_text_layer = text_layer_create(GRect(0, 0, bounds.size.w, SUB_TEXT_HEIGHT));
-  text_layer_set_font(s_battery_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+  s_battery_text_layer = text_layer_create(GRect(0, -5, bounds.size.w, SUB_TEXT_HEIGHT));
+  text_layer_set_font(s_battery_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
   add_text_layer(window_layer, s_battery_text_layer, GTextAlignmentRight);
 }
 
