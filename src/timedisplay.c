@@ -43,9 +43,9 @@ void timedisplay_load_text(Window *window)
 
 
   // Create the date display
-  s_date_text_layer = text_layer_create(GRect(0, 45 + TITLE_TEXT_HEIGHT, bounds.size.w, SUB_TEXT_HEIGHT));
+  s_date_text_layer = text_layer_create(GRect(0, -5, bounds.size.w, SUB_TEXT_HEIGHT));
   text_layer_set_font(s_date_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
-  add_text_layer(window_layer, s_date_text_layer, GTextAlignmentRight);
+  add_text_layer(window_layer, s_date_text_layer, GTextAlignmentLeft);
 }
 void timedisplay_unload(Window *window)
 {
