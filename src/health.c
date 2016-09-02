@@ -26,7 +26,7 @@ void health_load_graphics(Window *window)
   layer_add_child(window_layer, s_steps_layer);
 
   // Create steps meter Layer
-  s_steps_now_layer = layer_create(GRect(bounds.size.w/3, hh + 3*(hh>>2), bounds.size.w/3, (hh-3*(hh>>2))));
+  s_steps_now_layer = layer_create(GRect(hw>>1, hh>>1, hw, hh));
   layer_set_update_proc(s_steps_now_layer, steps_now_proc_layer);
   layer_add_child(window_layer, s_steps_now_layer);
 }
@@ -49,20 +49,20 @@ void health_load_text(Window *window)
   text_layer_set_font(s_steps_perc_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
   add_text_layer(window_layer, s_steps_perc_text_layer, GTextAlignmentRight);
 
-
   // Create the current average steps display
   s_steps_now_average_text_layer = text_layer_create(GRect(0, bounds.size.h - SUB_TEXT_HEIGHT - 13, bounds.size.w, SUB_TEXT_HEIGHT));
   text_layer_set_font(s_steps_now_average_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
   add_text_layer(window_layer, s_steps_now_average_text_layer, GTextAlignmentLeft);
+  text_layer_set_text_color(s_steps_now_average_text_layer, GColorDarkGray);
 
   // Create the average steps display
   s_steps_average_text_layer = text_layer_create(GRect(0, bounds.size.h - SUB_TEXT_HEIGHT - 13, bounds.size.w, SUB_TEXT_HEIGHT));
   text_layer_set_font(s_steps_average_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
   add_text_layer(window_layer, s_steps_average_text_layer, GTextAlignmentRight);
+  text_layer_set_text_color(s_steps_average_text_layer, GColorDarkGray);
 }
 void health_unload(Window *window)
 {
-
   text_layer_destroy(s_steps_text_layer);
   text_layer_destroy(s_steps_perc_text_layer);
   text_layer_destroy(s_steps_now_average_text_layer);
@@ -142,10 +142,8 @@ static void steps_proc_layer(Layer *layer, GContext *ctx)
 
   l = 1.0f * s_steps_average_now / s_steps_average;
   if (l <= 1.0) {
-    graphics_context_set_fill_color(ctx, GColorLavenderIndigo);
-    graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS, l * DEG_TO_TRIGANGLE(360) - DEG_TO_TRIGANGLE(2), l * DEG_TO_TRIGANGLE(360) + DEG_TO_TRIGANGLE(2));
     graphics_context_set_fill_color(ctx, GColorImperialPurple);
-    graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS, l * DEG_TO_TRIGANGLE(360) - DEG_TO_TRIGANGLE(1), l * DEG_TO_TRIGANGLE(360) + DEG_TO_TRIGANGLE(1));
+    graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS >> 1, l * DEG_TO_TRIGANGLE(360) - DEG_TO_TRIGANGLE(2), l * DEG_TO_TRIGANGLE(360) + DEG_TO_TRIGANGLE(2));
   }
 }
 
@@ -161,16 +159,15 @@ static void steps_now_proc_layer(Layer *layer, GContext *ctx)
 
   float l = 1.0f * s_steps_level / s_steps_average_now;
 
-  l = (((l > 1.5) ? 0.5 : ((l < -0.5) ? -0.5 : l - 1.0)) + 0.5) * bounds.size.w;
+  l = DEG_TO_TRIGANGLE((((l > 2) ? 1.0 : ((l < 0) ? -1.0 : l - 1.0))) * 180);
 
-  // draw the meters:
-  graphics_context_set_fill_color(ctx, GColorFolly);
-  graphics_fill_rect(ctx, GRect(0, 0, 2, bounds.size.h), 0, GCornerNone);
-  graphics_fill_rect(ctx, GRect(bounds.size.w/2, 0, 2, bounds.size.h), 0, GCornerNone);
-  graphics_fill_rect(ctx, GRect(bounds.size.w-2, 0, 2, bounds.size.h), 0, GCornerNone);
+  graphics_context_set_fill_color(ctx, GColorLavenderIndigo);
+  if (l < 0) {
+    graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS << 1, DEG_TO_TRIGANGLE(360) - l, DEG_TO_TRIGANGLE(360));
+  } else {
+    graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS << 1, 0, l);
+  }
 
-  graphics_context_set_fill_color(ctx, GColorBlack);
-  graphics_fill_rect(ctx, GRect(l-1, 0, 2, bounds.size.h), 0, GCornerNone);
 }
 
 
