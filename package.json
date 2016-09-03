@@ -16,11 +16,14 @@
         "resources": {
             "media": [
                 {
-                "type": "font",
-                "name": "PIXELS_42",
-                "file": "fonts/blocked.ttf",
-                "compatibility":"2.7"
-              }
+                    "characterRegex": "[0-9:]",
+                    "file": "fonts/blocked.ttf",
+                    "name": "PIXELS_42",
+                    "targetPlatforms": [
+                        "basalt"
+                    ],
+                    "type": "font"
+                }
             ]
         },
         "sdkVersion": "3",
