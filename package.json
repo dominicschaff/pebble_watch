@@ -14,7 +14,14 @@
         "messageKeys": [],
         "projectType": "native",
         "resources": {
-            "media": []
+            "media": [
+                {
+                "type": "font",
+                "name": "PIXELS_42",
+                "file": "fonts/blocked.ttf",
+                "compatibility":"2.7"
+              }
+            ]
         },
         "sdkVersion": "3",
         "targetPlatforms": [

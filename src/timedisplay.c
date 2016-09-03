@@ -14,6 +14,8 @@ static int s_hour_level, s_minute_level;
 
 static Layer *s_time_layer;
 
+static GFont s_time_font;
+
 void timedisplay_load_graphics(Window *window)
 {
   Layer *window_layer = window_get_root_layer(window);
@@ -35,10 +37,13 @@ void timedisplay_load_text(Window *window)
   int hh = bounds.size.h>>1;
   int hw = bounds.size.w>>1;
 
+  s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_PIXELS_42));
+
   // Create the time display
   // I can't seem to calculate 52 from the other values, I will find a way (or at least in a way that makes sense)
   s_time_text_layer = text_layer_create(GRect(0, 52, bounds.size.w, TITLE_TEXT_HEIGHT));
-  text_layer_set_font(s_time_text_layer, fonts_get_system_font(FONT_KEY_ROBOTO_BOLD_SUBSET_49));
+  // text_layer_set_font(s_time_text_layer, fonts_get_system_font(FONT_KEY_ROBOTO_BOLD_SUBSET_49));
+  text_layer_set_font(s_time_text_layer, s_time_font);
   add_text_layer(window_layer, s_time_text_layer, GTextAlignmentCenter);
 
 
@@ -53,6 +58,7 @@ void timedisplay_unload(Window *window)
   text_layer_destroy(s_time_text_layer);
   text_layer_destroy(s_date_text_layer);
   layer_destroy(s_time_layer);
+  fonts_unload_custom_font(s_time_font);
 }
 
 void timedisplay_init()
