@@ -24,3 +24,6 @@ You can build/run in one of two ways:
 1. Run `make` (after updating your IP address in the `Makefile`)
 2. Manually run: `pebble build` and `pebble install --phone <ip address>`
 
+## Notes:
+
+The font is a free font that I downloaded from: <http://www.dafont.com/blocked.font>, I believe that I can use it for any purpose. So I used it here.
