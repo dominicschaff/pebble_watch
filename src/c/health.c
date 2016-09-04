@@ -163,7 +163,7 @@ static void steps_now_proc_layer(Layer *layer, GContext *ctx)
 
   graphics_context_set_fill_color(ctx, GColorLavenderIndigo);
   if (l < 0) {
-    graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS << 1, DEG_TO_TRIGANGLE(360) - l, DEG_TO_TRIGANGLE(360));
+    graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS << 1, DEG_TO_TRIGANGLE(360) + l, DEG_TO_TRIGANGLE(360));
   } else {
     graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS << 1, 0, l);
   }
