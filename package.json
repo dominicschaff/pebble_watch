@@ -9,7 +9,7 @@
         "capabilities": [
             "health"
         ],
-        "displayName": "nixi",
+        "displayName": "Nixi",
         "enableMultiJS": true,
         "messageKeys": [],
         "projectType": "native",
