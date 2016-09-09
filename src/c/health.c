@@ -86,11 +86,13 @@ void update_health()
   static char steps_now_buffer[15];
   static char steps_average_buffer[10];
 
-  s_steps_average = (int)health_service_sum_averaged(HealthMetricStepCount, time_start_of_today(), time_start_of_today() + SECONDS_PER_DAY, HealthServiceTimeScopeWeekly);
+  int start = time_start_of_today();
+
+  s_steps_average = (int)health_service_sum_averaged(HealthMetricStepCount, start, start + SECONDS_PER_DAY, HealthServiceTimeScopeDaily);
   if (s_steps_average < 1)
     s_steps_average = STEPS_DEFAULT;
 
-  s_steps_average_now = (int)health_service_sum_averaged(HealthMetricStepCount, time_start_of_today(), time(NULL), HealthServiceTimeScopeDaily);
+  s_steps_average_now = (int)health_service_sum_averaged(HealthMetricStepCount, start, time(NULL), HealthServiceTimeScopeDaily);
   if (s_steps_average_now < 1)
     s_steps_average_now = STEPS_DEFAULT;
 
