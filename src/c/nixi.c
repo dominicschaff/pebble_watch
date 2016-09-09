@@ -79,7 +79,7 @@ static void main_window_load(Window *window)
   int hw = bounds.size.w>>1;
 
   // Create bluetooth meter Layer
-  s_bluetooth_layer = layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
+  s_bluetooth_layer = layer_create(bounds);
   layer_set_update_proc(s_bluetooth_layer, bluetooth_update_proc);
   layer_add_child(window_layer, s_bluetooth_layer);
 
@@ -124,7 +124,7 @@ static void battery_callback(BatteryChargeState state)
 {
   static char battery_buffer[8];
   s_battery_level = state.charge_percent;
-  snprintf(battery_buffer, sizeof(battery_buffer), "%d%% %s", state.charge_percent, state.is_charging ? "+" : "");
+  snprintf(battery_buffer, sizeof(battery_buffer), "%d%%%s", state.charge_percent, state.is_charging ? " +" : "");
   text_layer_set_text(s_battery_text_layer, battery_buffer);
   update_time();
 }
