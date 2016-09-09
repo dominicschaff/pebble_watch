@@ -8,7 +8,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed);
 static void time_update_proc(Layer *layer, GContext *ctx);
 static void add_text_layer(Layer *window_layer, TextLayer *text_layer, GTextAlignment alignment);
 
-static TextLayer *s_time_text_layer, *s_date_text_layer;
+static TextLayer *s_time_hour_text_layer, *s_time_minute_text_layer, *s_date_text_layer, *s_day_text_layer;
 
 static int s_hour_level, s_minute_level;
 
@@ -21,11 +21,8 @@ void timedisplay_load_graphics(Window *window)
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
-  int hh = bounds.size.h>>1;
-  int hw = bounds.size.w>>1;
-
   // Create hour meter Layer
-  s_time_layer = layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
+  s_time_layer = layer_create(bounds);
   layer_set_update_proc(s_time_layer, time_update_proc);
   layer_add_child(window_layer, s_time_layer);
 }
@@ -34,29 +31,35 @@ void timedisplay_load_text(Window *window)
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
-  int hh = bounds.size.h>>1;
-  int hw = bounds.size.w>>1;
-
-  s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_PIXELS_42));
+  s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_PIXELS_49));
 
   // Create the time display
-  // I can't seem to calculate 52 from the other values, I will find a way (or at least in a way that makes sense)
-  s_time_text_layer = text_layer_create(GRect(0, 52, bounds.size.w, TITLE_TEXT_HEIGHT));
-  // text_layer_set_font(s_time_text_layer, fonts_get_system_font(FONT_KEY_ROBOTO_BOLD_SUBSET_49));
-  text_layer_set_font(s_time_text_layer, s_time_font);
-  add_text_layer(window_layer, s_time_text_layer, GTextAlignmentCenter);
+  s_time_hour_text_layer = text_layer_create(GRect(0, SUB_TEXT_HEIGHT, bounds.size.w, TITLE_TEXT_HEIGHT));
+  text_layer_set_font(s_time_hour_text_layer, s_time_font);
+  add_text_layer(window_layer, s_time_hour_text_layer, GTextAlignmentCenter);
+
+  s_time_minute_text_layer = text_layer_create(GRect(0, SUB_TEXT_HEIGHT +  TITLE_TEXT_HEIGHT, bounds.size.w, TITLE_TEXT_HEIGHT));
+  text_layer_set_font(s_time_minute_text_layer, s_time_font);
+  add_text_layer(window_layer, s_time_minute_text_layer, GTextAlignmentCenter);
 
 
   // Create the date display
   s_date_text_layer = text_layer_create(GRect(0, -5, bounds.size.w, SUB_TEXT_HEIGHT));
   text_layer_set_font(s_date_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
   add_text_layer(window_layer, s_date_text_layer, GTextAlignmentLeft);
+
+  // Create the date display
+  s_day_text_layer = text_layer_create(GRect(0, SUB_TEXT_HEIGHT - 13, bounds.size.w, SUB_TEXT_HEIGHT));
+  text_layer_set_font(s_day_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+  add_text_layer(window_layer, s_day_text_layer, GTextAlignmentLeft);
 }
 void timedisplay_unload(Window *window)
 {
 
-  text_layer_destroy(s_time_text_layer);
+  text_layer_destroy(s_time_hour_text_layer);
+  text_layer_destroy(s_time_minute_text_layer);
   text_layer_destroy(s_date_text_layer);
+  text_layer_destroy(s_day_text_layer);
   layer_destroy(s_time_layer);
   fonts_unload_custom_font(s_time_font);
 }
@@ -117,8 +120,10 @@ static void time_update_proc(Layer *layer, GContext *ctx)
  */
 void update_time()
 {
-  static char s_buffer[8];
+  static char s_hour_buffer[4];
+  static char s_minute_buffer[4];
   static char date_buffer[16];
+  static char day_buffer[16];
 
   // Get the current time
   time_t temp = time(NULL);
@@ -129,12 +134,16 @@ void update_time()
   s_minute_level = tick_time->tm_min;
 
   // Create the string for the time display
-  strftime(s_buffer, sizeof(s_buffer), clock_is_24h_style() ?"%H:%M" : "%I:%M", tick_time);
-  text_layer_set_text(s_time_text_layer, s_buffer);
+  strftime(s_hour_buffer, sizeof(s_hour_buffer), clock_is_24h_style() ?"%H" : "%I", tick_time);
+  text_layer_set_text(s_time_hour_text_layer, s_hour_buffer);
+  strftime(s_minute_buffer, sizeof(s_minute_buffer), "%M", tick_time);
+  text_layer_set_text(s_time_minute_text_layer, s_minute_buffer);
 
   // Create the string for the date display
-  strftime(date_buffer, sizeof(date_buffer), "%a %d %b", tick_time);
+  strftime(date_buffer, sizeof(date_buffer), "%d %b", tick_time);
+  strftime(day_buffer, sizeof(day_buffer), "%a", tick_time);
   text_layer_set_text(s_date_text_layer, date_buffer);
+  text_layer_set_text(s_day_text_layer, day_buffer);
 
   // Mark the layers as dirty
   layer_mark_dirty(s_time_layer);

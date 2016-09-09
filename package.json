@@ -9,7 +9,7 @@
         "capabilities": [
             "health"
         ],
-        "displayName": "nixi",
+        "displayName": "Nixi",
         "enableMultiJS": true,
         "messageKeys": [],
         "projectType": "native",
@@ -18,7 +18,7 @@
                 {
                     "characterRegex": "[0-9:]",
                     "file": "fonts/blocked.ttf",
-                    "name": "PIXELS_42",
+                    "name": "PIXELS_49",
                     "targetPlatforms": [
                         "basalt"
                     ],
@@ -35,5 +35,5 @@
             "watchface": true
         }
     },
-    "version": "1.0.0"
+    "version": "1.1.0"
 }

@@ -36,9 +36,6 @@ void health_load_text(Window *window)
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
-  int hh = bounds.size.h>>1;
-  int hw = bounds.size.w>>1;
-
   // Create the steps display
   s_steps_text_layer = text_layer_create(GRect(0, bounds.size.h - SUB_TEXT_HEIGHT, bounds.size.w, SUB_TEXT_HEIGHT));
   text_layer_set_font(s_steps_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
@@ -53,13 +50,11 @@ void health_load_text(Window *window)
   s_steps_now_average_text_layer = text_layer_create(GRect(0, bounds.size.h - SUB_TEXT_HEIGHT - 13, bounds.size.w, SUB_TEXT_HEIGHT));
   text_layer_set_font(s_steps_now_average_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
   add_text_layer(window_layer, s_steps_now_average_text_layer, GTextAlignmentLeft);
-  text_layer_set_text_color(s_steps_now_average_text_layer, GColorDarkGray);
 
   // Create the average steps display
   s_steps_average_text_layer = text_layer_create(GRect(0, bounds.size.h - SUB_TEXT_HEIGHT - 13, bounds.size.w, SUB_TEXT_HEIGHT));
   text_layer_set_font(s_steps_average_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
   add_text_layer(window_layer, s_steps_average_text_layer, GTextAlignmentRight);
-  text_layer_set_text_color(s_steps_average_text_layer, GColorDarkGray);
 }
 void health_unload(Window *window)
 {
@@ -88,11 +83,12 @@ void update_health()
 
   int start = time_start_of_today();
 
-  s_steps_average = (int)health_service_sum_averaged(HealthMetricStepCount, start, start + SECONDS_PER_DAY, HealthServiceTimeScopeDaily);
+  s_steps_average = (int)health_service_sum_averaged(HealthMetricStepCount, start, start + SECONDS_PER_DAY, HealthServiceTimeScopeDailyWeekdayOrWeekend);
   if (s_steps_average < 1)
     s_steps_average = STEPS_DEFAULT;
 
-  s_steps_average_now = (int)health_service_sum_averaged(HealthMetricStepCount, start, time(NULL), HealthServiceTimeScopeDaily);
+  s_steps_average_now = (int)health_service_sum_averaged(HealthMetricStepCount, start, time(NULL), HealthServiceTimeScopeDailyWeekdayOrWeekend);
+
   if (s_steps_average_now < 1)
     s_steps_average_now = STEPS_DEFAULT;
 
@@ -128,7 +124,7 @@ void update_health()
 
 
 /**
- * When the steps layer is marked as dirty run thi
+ * When the steps layer is marked as dirty run this
  *
  * @param layer The layer to update
  * @param ctx   The context
@@ -140,12 +136,12 @@ static void steps_proc_layer(Layer *layer, GContext *ctx)
   float l = 1.0f * s_steps_level / s_steps_average;
 
   graphics_context_set_fill_color(ctx, l >= 1.0 ? GColorMalachite : GColorShockingPink);
-  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS >> 2, 0, l * DEG_TO_TRIGANGLE(360));
+  graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS >> 2, 0, l * DEG_TO_TRIGANGLE(360));
 
   l = 1.0f * s_steps_average_now / s_steps_average;
   if (l <= 1.0) {
     graphics_context_set_fill_color(ctx, GColorImperialPurple);
-    graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS >> 1, l * DEG_TO_TRIGANGLE(360) - DEG_TO_TRIGANGLE(2), l * DEG_TO_TRIGANGLE(360) + DEG_TO_TRIGANGLE(2));
+    graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS >> 1, l * DEG_TO_TRIGANGLE(360) - DEG_TO_TRIGANGLE(2), l * DEG_TO_TRIGANGLE(360) + DEG_TO_TRIGANGLE(2));
   }
 }
 
