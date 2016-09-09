@@ -18,7 +18,7 @@
                 {
                     "characterRegex": "[0-9:]",
                     "file": "fonts/blocked.ttf",
-                    "name": "PIXELS_42",
+                    "name": "PIXELS_49",
                     "targetPlatforms": [
                         "basalt"
                     ],
