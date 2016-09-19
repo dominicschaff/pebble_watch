@@ -39,6 +39,7 @@ static void time_update_proc(Layer *layer, GContext *ctx);
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed);
 
 static void add_text_layer(Layer *window_layer, TextLayer *text_layer, GTextAlignment alignment);
+static void format_number(char *str, int size, int number);
 static void update_watch();
 
 /**
@@ -337,9 +338,6 @@ void update_watch()
   text_layer_set_text(s_date_text_layer, date_buffer);
   text_layer_set_text(s_day_text_layer, day_buffer);
 
-  // Mark the layers as dirty
-  layer_mark_dirty(s_time_layer);
-
   int start = time_start_of_today();
 
   s_steps_average = (int)health_service_sum_averaged(HealthMetricStepCount, start, start + SECONDS_PER_DAY, HealthServiceTimeScopeDailyWeekdayOrWeekend);
@@ -353,20 +351,9 @@ void update_watch()
 
   s_steps_level = (int)health_service_sum_today(HealthMetricStepCount);
 
-  if (s_steps_level > 1000)
-    snprintf(steps_buffer, sizeof(steps_buffer), "%d,%03d", s_steps_level / 1000, s_steps_level % 1000);
-  else
-    snprintf(steps_buffer, sizeof(steps_buffer), "%d", s_steps_level);
-
-  if (s_steps_average > 1000)
-    snprintf(steps_average_buffer, sizeof(steps_average_buffer), "/%d,%03d", s_steps_average / 1000, s_steps_average % 1000);
-  else
-    snprintf(steps_average_buffer, sizeof(steps_average_buffer), "/%d", s_steps_average);
-
-  if (s_steps_average_now > 1000)
-    snprintf(steps_now_buffer, sizeof(steps_now_buffer), "%d,%03d", s_steps_average_now / 1000, s_steps_average_now % 1000);
-  else
-    snprintf(steps_now_buffer, sizeof(steps_now_buffer), "%d", s_steps_average_now);
+  format_number(steps_buffer, sizeof(steps_buffer), s_steps_level);
+  format_number(steps_average_buffer, sizeof(steps_average_buffer), s_steps_average);
+  format_number(steps_now_buffer, sizeof(steps_now_buffer), s_steps_average_now);
 
   snprintf(steps_perc_buffer, sizeof(steps_perc_buffer), "%d%%", (int)(100.0f * s_steps_level / s_steps_average));
 
@@ -377,11 +364,20 @@ void update_watch()
   text_layer_set_text(s_steps_average_text_layer, steps_average_buffer);
 
   // Mark the layers as dirty
+  layer_mark_dirty(s_time_layer);
   layer_mark_dirty(s_steps_layer);
   layer_mark_dirty(s_steps_now_layer);
 }
 
 /* Helper functions */
+
+static void format_number(char *str, int size, int number)
+{
+  if (number > 1000)
+    snprintf(str, size, "%d,%03d", number / 1000, number % 1000);
+  else
+    snprintf(str, size, "%d", number);
+}
 
 static void add_text_layer(Layer *window_layer, TextLayer *text_layer, GTextAlignment alignment)
 {
