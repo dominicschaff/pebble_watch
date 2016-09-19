@@ -57,6 +57,8 @@ int main(void)
  */
 static void init()
 {
+  setlocale(LC_ALL, "");
+
   s_main_window = window_create();
   window_set_window_handlers(s_main_window, (WindowHandlers)
   {
