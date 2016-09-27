@@ -5,7 +5,7 @@
 // Piece Sizing
 #define SUB_TEXT_HEIGHT 30
 #define TITLE_TEXT_HEIGHT 49
-#define PIE_THICKNESS 20
+#define PIE_THICKNESS 10
 
 static Window *s_main_window;
 
@@ -116,7 +116,7 @@ static void main_window_load(Window *window)
   layer_set_update_proc(s_steps_layer, steps_proc_layer);
   layer_add_child(window_layer, s_steps_layer);
 
-  // Create steps meter Layer
+  // Create now steps meter Layer
   s_steps_now_layer = layer_create(GRect(hw>>1, hh>>1, hw, hh));
   layer_set_update_proc(s_steps_now_layer, steps_now_proc_layer);
   layer_add_child(window_layer, s_steps_now_layer);
@@ -253,7 +253,7 @@ static void time_update_proc(Layer *layer, GContext *ctx)
   GRect bounds = layer_get_bounds(layer);
 
   graphics_context_set_fill_color(ctx, GColorPictonBlue);
-  graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS, 0, s_hour_level * DEG_TO_TRIGANGLE(15));
+  graphics_fill_radial(ctx, GRect(PIE_THICKNESS, PIE_THICKNESS, bounds.size.w - (PIE_THICKNESS<<1), bounds.size.h - (PIE_THICKNESS<<1)), GOvalScaleModeFitCircle, PIE_THICKNESS, 0, (s_hour_level%12) * DEG_TO_TRIGANGLE(30));
 
   graphics_context_set_fill_color(ctx, GColorMagenta);
   graphics_fill_radial(ctx, GRect(bounds.size.w >> 3, bounds.size.h >> 3, (3 * bounds.size.w) >> 2, (3 * bounds.size.h) >> 2), GOvalScaleModeFitCircle, PIE_THICKNESS, 0, s_minute_level * DEG_TO_TRIGANGLE(6));
@@ -272,17 +272,17 @@ static void steps_proc_layer(Layer *layer, GContext *ctx)
   float l = 1.0f * s_steps_level / s_steps_average;
 
   graphics_context_set_fill_color(ctx, l >= 1.0 ? GColorMalachite : GColorShockingPink);
-  graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS >> 2, 0, l * DEG_TO_TRIGANGLE(360));
+  graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS, 0, l * DEG_TO_TRIGANGLE(360));
 
   l = 1.0f * s_steps_average_now / s_steps_average;
   if (l <= 1.0) {
-    graphics_context_set_fill_color(ctx, GColorImperialPurple);
-    graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS >> 1, l * DEG_TO_TRIGANGLE(360) - DEG_TO_TRIGANGLE(2), l * DEG_TO_TRIGANGLE(360) + DEG_TO_TRIGANGLE(2));
+    graphics_context_set_fill_color(ctx, GColorDukeBlue);
+    graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS >> 2, 0, l * DEG_TO_TRIGANGLE(360));
   }
 }
 
 /**
- * When the steps layer is marked as dirty run thi
+ * When the steps layer is marked as dirty run this
  *
  * @param layer The layer to update
  * @param ctx   The context
@@ -297,9 +297,9 @@ static void steps_now_proc_layer(Layer *layer, GContext *ctx)
 
   graphics_context_set_fill_color(ctx, GColorLavenderIndigo);
   if (l < 0) {
-    graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS << 1, DEG_TO_TRIGANGLE(360) + l, DEG_TO_TRIGANGLE(360));
+    graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS, DEG_TO_TRIGANGLE(360) + l, DEG_TO_TRIGANGLE(360));
   } else {
-    graphics_fill_radial(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), GOvalScaleModeFitCircle, PIE_THICKNESS << 1, 0, l);
+    graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS, 0, l);
   }
 
 }
