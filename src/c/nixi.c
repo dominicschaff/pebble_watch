@@ -315,7 +315,6 @@ static void update_watch()
   static char date_buffer[10];
   static char day_buffer[5];
   int tmp_hour = s_hour_level;
-  int tmp_minute = s_minute_level;
 
   // Get the current time
   time_t temp = time(NULL);
@@ -343,7 +342,6 @@ static void update_watch()
     update_health();
   }
   layer_mark_dirty(s_minute_layer);
-  // update_health();
 }
 
 static void update_health()
@@ -376,10 +374,8 @@ static void update_health()
   text_layer_set_text(s_steps_now_average_text_layer, steps_now_buffer);
   text_layer_set_text(s_steps_average_text_layer, steps_average_buffer);
 
-  if (s_minute_level & 1) {
-    layer_mark_dirty(s_steps_layer);
-    layer_mark_dirty(s_steps_now_layer);
-  }
+  layer_mark_dirty(s_steps_layer);
+  layer_mark_dirty(s_steps_now_layer);
 }
 
 static void health_handler(HealthEventType event, void *context) {
@@ -390,8 +386,8 @@ static void health_handler(HealthEventType event, void *context) {
       update_health();
       break;
     case HealthEventSleepUpdate:
-      break;
     case HealthEventHeartRateUpdate:
+    case HealthEventMetricAlert:
       break;
   }
 }
