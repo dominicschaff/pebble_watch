@@ -22,15 +22,13 @@ static TextLayer *s_time_hour_text_layer, *s_time_minute_text_layer, *s_date_tex
 static int s_battery_level;
 static int s_hour_level, s_minute_level;
 static int s_steps_level, s_steps_average, s_steps_average_now;
-static int status = 0;
 
-static void deinit();
-static void init();
 static void main_window_load(Window *window);
 static void main_window_unload(Window *window);
 
 static void battery_callback(BatteryChargeState state);
 static void bluetooth_callback(bool connected);
+static void health_handler(HealthEventType event, void *context);
 
 static void bluetooth_update_proc(Layer *layer, GContext *ctx);
 static void steps_now_proc_layer(Layer *layer, GContext *ctx);
@@ -49,16 +47,6 @@ static void update_health();
  * Main function, the watch runs this function
  */
 int main(void)
-{
-  init();
-  app_event_loop();
-  deinit();
-}
-
-/**
- * Main initializer, this needs to initialize all the general components
- */
-static void init()
 {
   setlocale(LC_ALL, "");
 
@@ -80,13 +68,11 @@ static void init()
 
   battery_callback(battery_state_service_peek());
   battery_state_service_subscribe(battery_callback);
-}
+  health_service_events_subscribe(health_handler, NULL);
+  update_health();
 
-/**
- * This functions only job is to request that the window must be destroyed
- */
-static void deinit()
-{
+  app_event_loop();
+
   window_destroy(s_main_window);
 }
 
@@ -213,7 +199,6 @@ static void battery_callback(BatteryChargeState state)
   s_battery_level = state.charge_percent;
   snprintf(battery_buffer, sizeof(battery_buffer), "%d%%%s", state.charge_percent, state.is_charging ? " +" : "");
   text_layer_set_text(s_battery_text_layer, battery_buffer);
-  update_watch();
 }
 
 /**
@@ -240,7 +225,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed)
 }
 
 /**
- * When the bluetooth layer is marked as dirty run thi
+ * When the bluetooth layer is marked as dirty run this
  *
  * @param layer The layer to update
  * @param ctx   The context
@@ -260,7 +245,7 @@ static void bluetooth_update_proc(Layer *layer, GContext *ctx)
 static void time_hour_update_proc(Layer *layer, GContext *ctx)
 {
   graphics_context_set_fill_color(ctx, GColorPictonBlue);
-  graphics_fill_radial(ctx, layer_get_bounds(layer), GOvalScaleModeFitCircle, PIE_THICKNESS, 0, (s_hour_level%12) * DEG_TO_TRIGANGLE(30));
+  graphics_fill_radial(ctx, layer_get_bounds(layer), GOvalScaleModeFitCircle, PIE_THICKNESS, 0, (s_hour_level % 12) * DEG_TO_TRIGANGLE(30));
 }
 
 /**
@@ -291,10 +276,8 @@ static void steps_proc_layer(Layer *layer, GContext *ctx)
   graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS, 0, l * DEG_TO_TRIGANGLE(360));
 
   l = 1.0f * s_steps_average_now / s_steps_average;
-  if (l <= 1.0) {
-    graphics_context_set_fill_color(ctx, GColorDukeBlue);
-    graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS >> 2, 0, l * DEG_TO_TRIGANGLE(360));
-  }
+  graphics_context_set_fill_color(ctx, GColorDukeBlue);
+  graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS >> 2, 0, l * DEG_TO_TRIGANGLE(360));
 }
 
 /**
@@ -343,7 +326,7 @@ static void update_watch()
   s_minute_level = tick_time->tm_min;
 
   // Create the string for the time display
-  strftime(s_hour_buffer, sizeof(s_hour_buffer), clock_is_24h_style() ?"%H" : "%I", tick_time);
+  strftime(s_hour_buffer, sizeof(s_hour_buffer), clock_is_24h_style() ? "%H" : "%I", tick_time);
   text_layer_set_text(s_time_hour_text_layer, s_hour_buffer);
   strftime(s_minute_buffer, sizeof(s_minute_buffer), "%M", tick_time);
   text_layer_set_text(s_time_minute_text_layer, s_minute_buffer);
@@ -356,31 +339,28 @@ static void update_watch()
 
   // Mark the layers as dirty
   if (tmp_hour != s_hour_level) {
-      layer_mark_dirty(s_hour_layer);
+    layer_mark_dirty(s_hour_layer);
+    update_health();
   }
-  if (tmp_minute != s_minute_level) {
-      layer_mark_dirty(s_minute_layer);
-  }
-  update_health();
+  layer_mark_dirty(s_minute_layer);
+  // update_health();
 }
 
 static void update_health()
 {
   static char steps_buffer[10];
   static char steps_perc_buffer[10];
-  static char steps_now_buffer[15];
+  static char steps_now_buffer[10];
   static char steps_average_buffer[10];
 
   int start = time_start_of_today();
 
   s_steps_average = (int)health_service_sum_averaged(HealthMetricStepCount, start, start + SECONDS_PER_DAY, HealthServiceTimeScopeDailyWeekdayOrWeekend);
-  if (s_steps_average < 1)
-    s_steps_average = STEPS_DEFAULT;
+  if (s_steps_average < 1) s_steps_average = STEPS_DEFAULT;
 
   s_steps_average_now = (int)health_service_sum_averaged(HealthMetricStepCount, start, time(NULL), HealthServiceTimeScopeDailyWeekdayOrWeekend);
 
-  if (s_steps_average_now < 1)
-    s_steps_average_now = STEPS_DEFAULT;
+  if (s_steps_average_now < 1) s_steps_average_now = STEPS_DEFAULT;
 
   s_steps_level = (int)health_service_sum_today(HealthMetricStepCount);
 
@@ -389,16 +369,30 @@ static void update_health()
   format_number(steps_now_buffer, sizeof(steps_now_buffer), s_steps_average_now);
 
   snprintf(steps_perc_buffer, sizeof(steps_perc_buffer), "%d%%", (int)(100.0f * s_steps_level / s_steps_average));
-  
+
   // Set the steps display
   text_layer_set_text(s_steps_text_layer, steps_buffer);
   text_layer_set_text(s_steps_perc_text_layer, steps_perc_buffer);
   text_layer_set_text(s_steps_now_average_text_layer, steps_now_buffer);
   text_layer_set_text(s_steps_average_text_layer, steps_average_buffer);
-  
+
   if (s_minute_level & 1) {
     layer_mark_dirty(s_steps_layer);
     layer_mark_dirty(s_steps_now_layer);
+  }
+}
+
+static void health_handler(HealthEventType event, void *context) {
+  // Which type of event occurred?
+  switch(event) {
+    case HealthEventSignificantUpdate:
+    case HealthEventMovementUpdate:
+      update_health();
+      break;
+    case HealthEventSleepUpdate:
+      break;
+    case HealthEventHeartRateUpdate:
+      break;
   }
 }
 
