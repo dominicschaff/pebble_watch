@@ -329,8 +329,8 @@ static void update_watch()
 {
   static char s_hour_buffer[4];
   static char s_minute_buffer[4];
-  static char date_buffer[16];
-  static char day_buffer[16];
+  static char date_buffer[10];
+  static char day_buffer[5];
   int tmp_hour = s_hour_level;
   int tmp_minute = s_minute_level;
 
