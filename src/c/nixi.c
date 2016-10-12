@@ -22,6 +22,7 @@ static TextLayer *s_time_hour_text_layer, *s_time_minute_text_layer, *s_date_tex
 static int s_battery_level;
 static int s_hour_level, s_minute_level;
 static int s_steps_level, s_steps_average, s_steps_average_now;
+static int status = 0;
 
 static void deinit();
 static void init();
@@ -74,7 +75,6 @@ static void init()
     .pebble_app_connection_handler = bluetooth_callback
   });
   update_watch();
-  update_health();
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
   s_steps_average = STEPS_DEFAULT;
 
@@ -361,9 +361,7 @@ static void update_watch()
   if (tmp_minute != s_minute_level) {
       layer_mark_dirty(s_minute_layer);
   }
-  if (s_minute_level % 5 == 0) {
-    update_health();
-  }
+  update_health();
 }
 
 static void update_health()
@@ -398,9 +396,10 @@ static void update_health()
   text_layer_set_text(s_steps_now_average_text_layer, steps_now_buffer);
   text_layer_set_text(s_steps_average_text_layer, steps_average_buffer);
   
-
-  layer_mark_dirty(s_steps_layer);
-  layer_mark_dirty(s_steps_now_layer);
+  if (s_minute_level & 1) {
+    layer_mark_dirty(s_steps_layer);
+    layer_mark_dirty(s_steps_now_layer);
+  }
 }
 
 /* Helper functions */
