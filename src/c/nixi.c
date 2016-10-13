@@ -28,7 +28,6 @@ static void main_window_unload(Window *window);
 
 static void battery_callback(BatteryChargeState state);
 static void bluetooth_callback(bool connected);
-static void health_handler(HealthEventType event, void *context);
 
 static void bluetooth_update_proc(Layer *layer, GContext *ctx);
 static void steps_now_proc_layer(Layer *layer, GContext *ctx);
@@ -68,7 +67,6 @@ int main(void)
 
   battery_callback(battery_state_service_peek());
   battery_state_service_subscribe(battery_callback);
-  health_service_events_subscribe(health_handler, NULL);
   update_health();
 
   app_event_loop();
@@ -337,11 +335,10 @@ static void update_watch()
   text_layer_set_text(s_day_text_layer, day_buffer);
 
   // Mark the layers as dirty
-  if (tmp_hour != s_hour_level) {
-    layer_mark_dirty(s_hour_layer);
-    update_health();
-  }
+  if (tmp_hour != s_hour_level) layer_mark_dirty(s_hour_layer);
   layer_mark_dirty(s_minute_layer);
+  if (s_minute_level & 1)
+    update_health();
 }
 
 static void update_health()
@@ -376,20 +373,6 @@ static void update_health()
 
   layer_mark_dirty(s_steps_layer);
   layer_mark_dirty(s_steps_now_layer);
-}
-
-static void health_handler(HealthEventType event, void *context) {
-  // Which type of event occurred?
-  switch(event) {
-    case HealthEventSignificantUpdate:
-    case HealthEventMovementUpdate:
-      update_health();
-      break;
-    case HealthEventSleepUpdate:
-    case HealthEventHeartRateUpdate:
-    case HealthEventMetricAlert:
-      break;
-  }
 }
 
 /* Helper functions */
