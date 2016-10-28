@@ -1,5 +1,3 @@
-var myAPIKey = '';
-
 function locationSuccess(pos) {
   var coordinates = pos.coords;
   Pebble.sendAppMessage({
@@ -17,8 +15,9 @@ function locationError(err) {
 }
 
 var locationOptions = {
-  'timeout': 15000,
-  'maximumAge': 60000
+  'enableHighAccuracy': false,
+  'timeout': 150000,
+  'maximumAge': 3600000
 };
 
 Pebble.addEventListener('ready', function (e) {

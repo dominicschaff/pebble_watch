@@ -31,6 +31,8 @@ static TextLayer *s_time_hour_text_layer, *s_time_minute_text_layer, *s_date_tex
 static int s_battery_level;
 static int s_hour_level, s_minute_level;
 static int s_steps_level, s_steps_average, s_steps_average_now;
+static int timeMinutes;
+static bool bluetoothConnected = false;
 
 static void main_window_load(Window *window);
 static void main_window_unload(Window *window);
@@ -49,14 +51,17 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed);
 static void add_text_layer(Layer *window_layer, TextLayer *text_layer, GTextAlignment alignment);
 static void update_watch();
 static void update_health();
+static void setTextColour();
 
-int current_sunrise_sunset_day = -1;
-int current_moon_day = -1;
+static bool dayTime = true;
+
 float sunriseTime;
 float sunsetTime;
 double lat = 0.0;
 double lon = 0.0;
 int tz;
+int sunriseHour = 0, sunriseMinute = 0, sunsetHour = 0, sunsetMinute = 0;
+int sunriseMinutes = 0, sunsetMinutes = 1500;
 
 static void update_location(void)
 {
@@ -67,24 +72,33 @@ static void update_location(void)
   }
   
   time_t temp = time(NULL);
-  struct tm *tick_time = localtime(&temp);
+  struct tm *local_time = localtime(&temp);
+  struct tm *gmt_time = gmtime(&temp);
   
-  int hour = tick_time->tm_hour;
+  tz = local_time->tm_hour - gmt_time->tm_hour;
   
-  tick_time = gmtime(&temp);
-  
-  int gmthour = tick_time->tm_hour;
-  
-  tz = hour - gmthour;
+  if (gmt_time->tm_yday < local_time->tm_yday) {
+    tz += 24;
+  } else if (gmt_time->tm_yday > local_time->tm_yday) {
+    tz -= 24;
+  }
   
   sunriseTime = calcSunRise(2016, 10, 28, lat, lon, ZENITH_OFFICIAL) + tz;
   sunsetTime = calcSunSet(2016, 10, 28, lat, lon, ZENITH_OFFICIAL) + tz;
+  
+  sunriseHour = (int)sunriseTime;
+  sunriseMinute = (int)((((int)(sunriseTime*100))%100)*0.6);
+  sunsetHour = (int)sunsetTime;
+  sunsetMinute = (int)((((int)(sunsetTime*100))%100)*0.6);
+  sunriseMinutes = sunriseHour * 60 + sunriseMinute;
+  sunsetMinutes = sunsetHour * 60 + sunsetMinute;
 
   snprintf(location_buffer, sizeof(location_buffer),
            "%d:%d - %d:%d",
-           (int)sunriseTime, (int)((((int)(sunriseTime*100))%100)*0.6),
-           (int)sunsetTime, (int)((((int)(sunsetTime*100))%100)*0.6));
+           sunriseHour, sunriseMinute,
+           sunsetHour, sunsetMinute);
   text_layer_set_text(s_location_text_layer, location_buffer);
+  update_watch();
 }
 
 static void sync_error_callback(DictionaryResult dict_error, AppMessageResult app_message_error, void *context) {
@@ -303,7 +317,9 @@ static void battery_callback(BatteryChargeState state)
  */
 static void bluetooth_callback(bool connected)
 {
-  layer_set_hidden(s_bluetooth_layer, connected);
+  bluetoothConnected = connected;
+  layer_mark_dirty(s_bluetooth_layer);
+  
   if(!connected)
     vibes_double_pulse();
 }
@@ -327,7 +343,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed)
  */
 static void bluetooth_update_proc(Layer *layer, GContext *ctx)
 {
-  graphics_context_set_fill_color(ctx, GColorRed);
+  graphics_context_set_fill_color(ctx, bluetoothConnected ? (dayTime ? GColorWhite : GColorBlack) : GColorRed);
   graphics_fill_rect(ctx, layer_get_bounds(layer), 0, GCornerNone);
 }
 
@@ -339,6 +355,7 @@ static void bluetooth_update_proc(Layer *layer, GContext *ctx)
  */
 static void time_hour_update_proc(Layer *layer, GContext *ctx)
 {
+  if (!dayTime) return;
   graphics_context_set_fill_color(ctx, GColorPictonBlue);
   graphics_fill_radial(ctx, layer_get_bounds(layer), GOvalScaleModeFitCircle, PIE_THICKNESS, 0, (s_hour_level % 12) * DEG_TO_TRIGANGLE(30));
 }
@@ -351,6 +368,7 @@ static void time_hour_update_proc(Layer *layer, GContext *ctx)
  */
 static void time_minute_update_proc(Layer *layer, GContext *ctx)
 {
+  if (!dayTime) return;
   graphics_context_set_fill_color(ctx, GColorMagenta);
   graphics_fill_radial(ctx, layer_get_bounds(layer), GOvalScaleModeFitCircle, PIE_THICKNESS, 0, s_minute_level * DEG_TO_TRIGANGLE(6));
 }
@@ -363,6 +381,7 @@ static void time_minute_update_proc(Layer *layer, GContext *ctx)
  */
 static void steps_proc_layer(Layer *layer, GContext *ctx)
 {
+  if (!dayTime) return;
   GRect bounds = layer_get_bounds(layer);
 
   float l = 1.0f * s_steps_level / s_steps_average;
@@ -383,6 +402,7 @@ static void steps_proc_layer(Layer *layer, GContext *ctx)
  */
 static void steps_now_proc_layer(Layer *layer, GContext *ctx)
 {
+  if (!dayTime) return;
   GRect bounds = layer_get_bounds(layer);
 
   float l = 1.0f * s_steps_level / s_steps_average_now;
@@ -418,6 +438,7 @@ static void update_watch()
   // Save the minute and hour (for the bars)
   s_hour_level = tick_time->tm_hour;
   s_minute_level = tick_time->tm_min;
+  timeMinutes = s_hour_level * 60 + s_minute_level;
 
   // Create the string for the time display
   strftime(s_hour_buffer, sizeof(s_hour_buffer), clock_is_24h_style() ? "%H" : "%I", tick_time);
@@ -431,15 +452,19 @@ static void update_watch()
   text_layer_set_text(s_date_text_layer, date_buffer);
   text_layer_set_text(s_day_text_layer, day_buffer);
 
-  // Mark the layers as dirty
-  if (tmp_hour != s_hour_level) layer_mark_dirty(s_hour_layer);
-  layer_mark_dirty(s_minute_layer);
   if (s_minute_level & 1)
     update_health();
 
   if (s_hour_level == 0) {
     request_data();
   }
+  
+  dayTime = timeMinutes <= sunsetMinutes && timeMinutes >= sunriseMinutes;
+  setTextColour();
+  
+  // Mark the layers as dirty
+  if (tmp_hour != s_hour_level) layer_mark_dirty(s_hour_layer);
+  layer_mark_dirty(s_minute_layer);
 }
 
 static void update_health()
@@ -472,8 +497,10 @@ static void update_health()
   text_layer_set_text(s_steps_now_average_text_layer, steps_now_buffer);
   text_layer_set_text(s_steps_average_text_layer, steps_average_buffer);
 
-  layer_mark_dirty(s_steps_layer);
-  layer_mark_dirty(s_steps_now_layer);
+  if (dayTime) {
+    layer_mark_dirty(s_steps_layer);
+    layer_mark_dirty(s_steps_now_layer);
+  }
 }
 
 /* Helper functions */
@@ -484,4 +511,19 @@ static void add_text_layer(Layer *window_layer, TextLayer *text_layer, GTextAlig
   text_layer_set_text_color(text_layer, GColorBlack);
   text_layer_set_text_alignment(text_layer, alignment);
   layer_add_child(window_layer, text_layer_get_layer(text_layer));
+}
+
+static void setTextColour()
+{
+  text_layer_set_text_color(s_time_hour_text_layer, dayTime ? GColorBlack : GColorWhite);
+  text_layer_set_text_color(s_time_minute_text_layer, dayTime ? GColorBlack : GColorWhite);
+  text_layer_set_text_color(s_date_text_layer, dayTime ? GColorBlack : GColorWhite);
+  text_layer_set_text_color(s_day_text_layer, dayTime ? GColorBlack : GColorWhite);
+  text_layer_set_text_color(s_location_text_layer, dayTime ? GColorBlack : GColorWhite);
+  text_layer_set_text_color(s_steps_text_layer, dayTime ? GColorBlack : GColorWhite);
+  text_layer_set_text_color(s_steps_perc_text_layer, dayTime ? GColorBlack : GColorWhite);
+  text_layer_set_text_color(s_steps_now_average_text_layer, dayTime ? GColorBlack : GColorWhite);
+  text_layer_set_text_color(s_steps_average_text_layer, dayTime ? GColorBlack : GColorWhite);
+  text_layer_set_text_color(s_battery_text_layer, dayTime ? GColorBlack : GColorWhite);
+  layer_mark_dirty(s_bluetooth_layer);
 }
