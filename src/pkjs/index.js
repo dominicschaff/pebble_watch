@@ -3,8 +3,8 @@ var myAPIKey = '';
 function locationSuccess(pos) {
   var coordinates = pos.coords;
   Pebble.sendAppMessage({
-    'LONGITUDE': '' + coordinates.latitude,
-    'LATITUDE' : '' + coordinates.longitude
+    'LONGITUDE': '' + coordinates.longitude,
+    'LATITUDE' : '' + coordinates.latitude
   });
 }
 

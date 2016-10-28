@@ -1,6 +1,5 @@
 #include <pebble.h>
-#include "my_math.h"
-#include "suncalc.h"
+#include "utilities.h"
 // Default value
 #define STEPS_DEFAULT 1000
 
@@ -48,34 +47,43 @@ static void time_minute_update_proc(Layer *layer, GContext *ctx);
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed);
 
 static void add_text_layer(Layer *window_layer, TextLayer *text_layer, GTextAlignment alignment);
-static void format_number(char *str, int size, int number);
 static void update_watch();
 static void update_health();
-float calcSunRise(int year, int month, int day, float latitude, float longitude, float zenith);
-float calcSunSet(int year, int month, int day, float latitude, float longitude, float zenith);
-
-double atof(const char *nptr);
 
 int current_sunrise_sunset_day = -1;
 int current_moon_day = -1;
 float sunriseTime;
 float sunsetTime;
-int phase;
-double lat;
-double lon;
-double tz;
+double lat = 0.0;
+double lon = 0.0;
+int tz;
 
 static void update_location(void)
 {
   static char location_buffer[20];
-
-  float sunriseTime = calcSunRise(time->tm_year, time->tm_mon+1, time->tm_mday, lat, lon, 91.0f);
-  float sunsetTime = calcSunSet(time->tm_year, time->tm_mon+1, time->tm_mday, lat, lon, 91.0f);
+  if (lat == 0 && lon == 0) {
+      text_layer_set_text(s_location_text_layer, "Locating...");
+    return;
+  }
+  
+  time_t temp = time(NULL);
+  struct tm *tick_time = localtime(&temp);
+  
+  int hour = tick_time->tm_hour;
+  
+  tick_time = gmtime(&temp);
+  
+  int gmthour = tick_time->tm_hour;
+  
+  tz = hour - gmthour;
+  
+  sunriseTime = calcSunRise(2016, 10, 28, lat, lon, ZENITH_OFFICIAL) + tz;
+  sunsetTime = calcSunSet(2016, 10, 28, lat, lon, ZENITH_OFFICIAL) + tz;
 
   snprintf(location_buffer, sizeof(location_buffer),
-           "%d,%d",
-           (int)sunriseTime,
-           (int)sunsetTime);
+           "%d:%d - %d:%d",
+           (int)sunriseTime, (int)((((int)(sunriseTime*100))%100)*0.6),
+           (int)sunsetTime, (int)((((int)(sunsetTime*100))%100)*0.6));
   text_layer_set_text(s_location_text_layer, location_buffer);
 }
 
@@ -429,8 +437,8 @@ static void update_watch()
   if (s_minute_level & 1)
     update_health();
 
-  if (s_minute_level % 60) {
-
+  if (s_hour_level == 0) {
+    request_data();
   }
 }
 
@@ -470,130 +478,10 @@ static void update_health()
 
 /* Helper functions */
 
-static void format_number(char *str, int size, int number)
-{
-  if (number > 1000)
-    snprintf(str, size, "%d,%03d", number / 1000, number % 1000);
-  else
-    snprintf(str, size, "%d", number);
-}
-
 static void add_text_layer(Layer *window_layer, TextLayer *text_layer, GTextAlignment alignment)
 {
   text_layer_set_background_color(text_layer, GColorClear);
   text_layer_set_text_color(text_layer, GColorBlack);
   text_layer_set_text_alignment(text_layer, alignment);
   layer_add_child(window_layer, text_layer_get_layer(text_layer));
-}
-
-
-double atof(const char *nptr)
-{
-    return (strtod(nptr, (char **)NULL));
-}
-int isspace(int c)
-{
-  if(((char)c)==' ')
-    return 1;
-  return 0;
-}
-
-int isdigit(int c)
-{
-  char cc = (char)c;
-  if(cc>='0' && cc<='9')
-    return 1;
-  return 0;
-}
-
-double strtod(const char *nptr, char **endptr)
-{
-    double x = 0.0;
-    double xs= 1.0;
-    double es = 1.0;
-    double xf = 0.0;
-    double xd = 1.0;
-    while( isspace( (unsigned char)*nptr ) ) ++nptr;
-    if(*nptr == '-')
-    {
-        xs = -1;
-        nptr++;
-    }
-    else if(*nptr == '+')
-    {
-        nptr++;
-    }
-
-    while (1)
-    {
-        if (isdigit((unsigned char)*nptr))
-        {
-            x = x * 10 + (*nptr - '0');
-            nptr++;
-        }
-        else
-        {
-            x = x * xs;
-            break;
-        }
-    }
-    if (*nptr == '.')
-    {
-        nptr++;
-        while (1)
-        {
-            if (isdigit((unsigned char)*nptr))
-            {
-                xf = xf * 10 + (*nptr - '0');
-                xd = xd * 10;
-            }
-            else
-            {
-                x = x + xs * (xf / xd);
-                break;
-            }
-            nptr++;
-        }
-    }
-    if ((*nptr == 'e') || (*nptr == 'E'))
-    {
-        nptr++;
-        if (*nptr == '-')
-        {
-            es = -1;
-            nptr++;
-        }
-        xd = 1;
-        xf = 0;
-        while (1)
-        {
-            if (isdigit((unsigned char)*nptr))
-            {
-                xf = xf * 10 + (*nptr - '0');
-                nptr++;
-            }
-            else
-            {
-                while (xf > 0)
-                {
-                    xd *= 10;
-                    xf--;
-                }
-                if (es < 0.0)
-                {
-                    x = x / xd;
-                }
-                else
-                {
-                    x = x * xd;
-                }
-                break;
-            }
-        }
-    }
-    if (endptr != NULL)
-    {
-        *endptr = (char *)nptr;
-    }
-    return (x);
 }
