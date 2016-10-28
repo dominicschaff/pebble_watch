@@ -7,6 +7,14 @@
 #define TITLE_TEXT_HEIGHT 49
 #define PIE_THICKNESS 10
 
+static AppSync s_sync;
+static uint8_t s_sync_buffer[64];
+
+enum LocationKey {
+  LONGITUDE = 0x0,
+  LATITUDE = 0x1
+};
+
 static Window *s_main_window;
 
 static GFont s_time_font;
@@ -15,7 +23,7 @@ static Layer *s_bluetooth_layer;
 static Layer *s_steps_layer, *s_steps_now_layer;
 static Layer *s_hour_layer, *s_minute_layer;
 
-static TextLayer *s_battery_text_layer;
+static TextLayer *s_battery_text_layer, *s_location_text_layer;
 static TextLayer *s_steps_text_layer, *s_steps_perc_text_layer, *s_steps_now_average_text_layer, *s_steps_average_text_layer;
 static TextLayer *s_time_hour_text_layer, *s_time_minute_text_layer, *s_date_text_layer, *s_day_text_layer;
 
@@ -41,6 +49,57 @@ static void add_text_layer(Layer *window_layer, TextLayer *text_layer, GTextAlig
 static void format_number(char *str, int size, int number);
 static void update_watch();
 static void update_health();
+float calcSunRise(int year, int month, int day, float latitude, float longitude, float zenith);
+float calcSunSet(int year, int month, int day, float latitude, float longitude, float zenith);
+
+double atof(const char *nptr);
+
+static float longitude_value = 0.0;
+static float latitude_value = 0.0;
+
+static void update_location(void)
+{
+  static char location_buffer[20];
+  snprintf(location_buffer, sizeof(location_buffer),
+           "%d,%d",
+           (int)longitude_value,
+           (int)latitude_value);
+  text_layer_set_text(s_location_text_layer, location_buffer);
+}
+
+static void sync_error_callback(DictionaryResult dict_error, AppMessageResult app_message_error, void *context) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "App Message Sync Error: %d", app_message_error);
+}
+
+static void sync_tuple_changed_callback(const uint32_t key, const Tuple* new_tuple, const Tuple* old_tuple, void* context) {
+  switch (key) {
+    case LATITUDE:
+      latitude_value = atof(new_tuple->value->cstring);
+      update_location();
+      break;
+    case LONGITUDE:
+      longitude_value = atof(new_tuple->value->cstring);
+      update_location();
+      break;
+  }
+}
+
+static void request_data(void)
+{
+  DictionaryIterator *iter;
+  app_message_outbox_begin(&iter);
+
+  if (!iter) {
+    // Error creating outbound message
+    return;
+  }
+
+  int value = 1;
+  dict_write_int(iter, 1, &value, sizeof(int), true);
+  dict_write_end(iter);
+
+  app_message_outbox_send();
+}
 
 /**
  * Main function, the watch runs this function
@@ -61,6 +120,7 @@ int main(void)
   connection_service_subscribe((ConnectionHandlers) {
     .pebble_app_connection_handler = bluetooth_callback
   });
+  app_message_open(64, 64);
   update_watch();
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
   s_steps_average = STEPS_DEFAULT;
@@ -68,10 +128,22 @@ int main(void)
   battery_callback(battery_state_service_peek());
   battery_state_service_subscribe(battery_callback);
   update_health();
+  
+  Tuplet initial_values[] = {
+    TupletCString(LONGITUDE, "0"),
+    TupletCString(LATITUDE, "0")
+  };
+
+  app_sync_init(&s_sync, s_sync_buffer, sizeof(s_sync_buffer),
+      initial_values, ARRAY_LENGTH(initial_values),
+      sync_tuple_changed_callback, sync_error_callback, NULL);
+  
+  request_data();
 
   app_event_loop();
 
   window_destroy(s_main_window);
+  app_sync_deinit(&s_sync);
 }
 
 /**
@@ -158,6 +230,10 @@ static void main_window_load(Window *window)
   s_battery_text_layer = text_layer_create(GRect(0, -5, bounds.size.w, SUB_TEXT_HEIGHT));
   text_layer_set_font(s_battery_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
   add_text_layer(window_layer, s_battery_text_layer, GTextAlignmentRight);
+  
+  s_location_text_layer = text_layer_create(GRect(0, SUB_TEXT_HEIGHT - 13, bounds.size.w, SUB_TEXT_HEIGHT));
+  text_layer_set_font(s_location_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+  add_text_layer(window_layer, s_location_text_layer, GTextAlignmentRight);
 }
 
 /**
@@ -171,6 +247,7 @@ static void main_window_unload(Window *window)
   text_layer_destroy(s_time_minute_text_layer);
   text_layer_destroy(s_date_text_layer);
   text_layer_destroy(s_day_text_layer);
+  text_layer_destroy(s_location_text_layer);
   layer_destroy(s_hour_layer);
   layer_destroy(s_minute_layer);
   fonts_unload_custom_font(s_time_font);
@@ -339,6 +416,10 @@ static void update_watch()
   layer_mark_dirty(s_minute_layer);
   if (s_minute_level & 1)
     update_health();
+  
+  if (s_minute_level % 60) {
+    
+  }
 }
 
 static void update_health()
@@ -391,4 +472,116 @@ static void add_text_layer(Layer *window_layer, TextLayer *text_layer, GTextAlig
   text_layer_set_text_color(text_layer, GColorBlack);
   text_layer_set_text_alignment(text_layer, alignment);
   layer_add_child(window_layer, text_layer_get_layer(text_layer));
+}
+
+
+double atof(const char *nptr)
+{
+    return (strtod(nptr, (char **)NULL));
+}
+int isspace(int c)
+{
+  if(((char)c)==' ')
+    return 1;
+  return 0; 
+}
+
+int isdigit(int c)
+{
+  char cc = (char)c;
+  if(cc>='0' && cc<='9')
+    return 1; 
+  return 0; 
+}
+
+double strtod(const char *nptr, char **endptr)
+{
+    double x = 0.0;
+    double xs= 1.0;
+    double es = 1.0;
+    double xf = 0.0;
+    double xd = 1.0;
+    while( isspace( (unsigned char)*nptr ) ) ++nptr;
+    if(*nptr == '-')
+    {
+        xs = -1;
+        nptr++;
+    }
+    else if(*nptr == '+')
+    {
+        nptr++;
+    }
+
+    while (1)
+    {
+        if (isdigit((unsigned char)*nptr))
+        {
+            x = x * 10 + (*nptr - '0');
+            nptr++;
+        }
+        else
+        {
+            x = x * xs;
+            break;
+        }
+    }
+    if (*nptr == '.')
+    {
+        nptr++;
+        while (1)
+        {
+            if (isdigit((unsigned char)*nptr))
+            {
+                xf = xf * 10 + (*nptr - '0');
+                xd = xd * 10;
+            }
+            else
+            {
+                x = x + xs * (xf / xd);
+                break;
+            }
+            nptr++;
+        }
+    }
+    if ((*nptr == 'e') || (*nptr == 'E'))
+    {
+        nptr++;
+        if (*nptr == '-')
+        {
+            es = -1;
+            nptr++;
+        }
+        xd = 1;
+        xf = 0;
+        while (1)
+        {
+            if (isdigit((unsigned char)*nptr))
+            {
+                xf = xf * 10 + (*nptr - '0');
+                nptr++;
+            }
+            else
+            {
+                while (xf > 0)
+                {
+                    xd *= 10;
+                    xf--;
+                }
+                if (es < 0.0)
+                {
+                    x = x / xd;
+                }
+                else
+                {
+                    x = x * xd;
+                }
+                break;
+            }
+        }
+    }
+    if (endptr != NULL)
+    {
+        *endptr = (char *)nptr;
+    }
+    return (x);
 }

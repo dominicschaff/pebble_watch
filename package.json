@@ -11,7 +11,10 @@
         ],
         "displayName": "Nixi",
         "enableMultiJS": true,
-        "messageKeys": [],
+        "messageKeys": {
+            "LATITUDE": 1,
+            "LONGITUDE": 0
+        },
         "projectType": "native",
         "resources": {
             "media": [
