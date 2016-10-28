@@ -200,14 +200,14 @@ static void main_window_load(Window *window)
   layer_add_child(window_layer, s_bluetooth_layer);
 
   // Create hour meter Layer
-  s_hour_layer = layer_create(GRect(PIE_THICKNESS, PIE_THICKNESS, bounds.size.w - (PIE_THICKNESS<<1), bounds.size.h - (PIE_THICKNESS<<1)));
-  layer_set_update_proc(s_hour_layer, time_hour_update_proc);
-  layer_add_child(window_layer, s_hour_layer);
+  s_minute_layer = layer_create(GRect(PIE_THICKNESS, PIE_THICKNESS, bounds.size.w - (PIE_THICKNESS<<1), bounds.size.h - (PIE_THICKNESS<<1)));
+  layer_set_update_proc(s_minute_layer, time_hour_update_proc);
+  layer_add_child(window_layer, s_minute_layer);
 
   // Create hour meter Layer
-  s_minute_layer = layer_create(GRect(bounds.size.w >> 3, bounds.size.h >> 3, (3 * bounds.size.w) >> 2, (3 * bounds.size.h) >> 2));
-  layer_set_update_proc(s_minute_layer, time_minute_update_proc);
-  layer_add_child(window_layer, s_minute_layer);
+  s_hour_layer = layer_create(GRect(bounds.size.w >> 3, bounds.size.h >> 3, (3 * bounds.size.w) >> 2, (3 * bounds.size.h) >> 2));
+  layer_set_update_proc(s_hour_layer, time_minute_update_proc);
+  layer_add_child(window_layer, s_hour_layer);
 
   // Create steps meter Layer
   s_steps_layer = layer_create(bounds);
@@ -459,8 +459,12 @@ static void update_watch()
     request_data();
   }
   
-  dayTime = timeMinutes <= sunsetMinutes && timeMinutes >= sunriseMinutes;
-  setTextColour();
+  bool t = timeMinutes <= sunsetMinutes && timeMinutes >= sunriseMinutes;
+  
+  if (dayTime != t) {
+    dayTime = t;
+    setTextColour();
+  }
   
   // Mark the layers as dirty
   if (tmp_hour != s_hour_level) layer_mark_dirty(s_hour_layer);

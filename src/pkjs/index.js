@@ -9,8 +9,8 @@ function locationSuccess(pos) {
 function locationError(err) {
   console.warn('location error (' + err.code + '): ' + err.message);
   Pebble.sendAppMessage({
-    'LONGITUDE': 0,
-    'LATITUDE' : 0
+    'LONGITUDE': '0.0',
+    'LATITUDE' : '0.0'
   });
 }
 
