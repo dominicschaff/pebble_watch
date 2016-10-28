@@ -1,4 +1,6 @@
 #include <pebble.h>
+#include "my_math.h"
+#include "suncalc.h"
 // Default value
 #define STEPS_DEFAULT 1000
 
@@ -54,16 +56,26 @@ float calcSunSet(int year, int month, int day, float latitude, float longitude, 
 
 double atof(const char *nptr);
 
-static float longitude_value = 0.0;
-static float latitude_value = 0.0;
+int current_sunrise_sunset_day = -1;
+int current_moon_day = -1;
+float sunriseTime;
+float sunsetTime;
+int phase;
+double lat;
+double lon;
+double tz;
 
 static void update_location(void)
 {
   static char location_buffer[20];
+
+  float sunriseTime = calcSunRise(time->tm_year, time->tm_mon+1, time->tm_mday, lat, lon, 91.0f);
+  float sunsetTime = calcSunSet(time->tm_year, time->tm_mon+1, time->tm_mday, lat, lon, 91.0f);
+
   snprintf(location_buffer, sizeof(location_buffer),
            "%d,%d",
-           (int)longitude_value,
-           (int)latitude_value);
+           (int)sunriseTime,
+           (int)sunsetTime);
   text_layer_set_text(s_location_text_layer, location_buffer);
 }
 
@@ -74,11 +86,11 @@ static void sync_error_callback(DictionaryResult dict_error, AppMessageResult ap
 static void sync_tuple_changed_callback(const uint32_t key, const Tuple* new_tuple, const Tuple* old_tuple, void* context) {
   switch (key) {
     case LATITUDE:
-      latitude_value = atof(new_tuple->value->cstring);
+      lat = atof(new_tuple->value->cstring);
       update_location();
       break;
     case LONGITUDE:
-      longitude_value = atof(new_tuple->value->cstring);
+      lon = atof(new_tuple->value->cstring);
       update_location();
       break;
   }
@@ -128,7 +140,7 @@ int main(void)
   battery_callback(battery_state_service_peek());
   battery_state_service_subscribe(battery_callback);
   update_health();
-  
+
   Tuplet initial_values[] = {
     TupletCString(LONGITUDE, "0"),
     TupletCString(LATITUDE, "0")
@@ -137,7 +149,7 @@ int main(void)
   app_sync_init(&s_sync, s_sync_buffer, sizeof(s_sync_buffer),
       initial_values, ARRAY_LENGTH(initial_values),
       sync_tuple_changed_callback, sync_error_callback, NULL);
-  
+
   request_data();
 
   app_event_loop();
@@ -230,7 +242,7 @@ static void main_window_load(Window *window)
   s_battery_text_layer = text_layer_create(GRect(0, -5, bounds.size.w, SUB_TEXT_HEIGHT));
   text_layer_set_font(s_battery_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
   add_text_layer(window_layer, s_battery_text_layer, GTextAlignmentRight);
-  
+
   s_location_text_layer = text_layer_create(GRect(0, SUB_TEXT_HEIGHT - 13, bounds.size.w, SUB_TEXT_HEIGHT));
   text_layer_set_font(s_location_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
   add_text_layer(window_layer, s_location_text_layer, GTextAlignmentRight);
@@ -416,9 +428,9 @@ static void update_watch()
   layer_mark_dirty(s_minute_layer);
   if (s_minute_level & 1)
     update_health();
-  
+
   if (s_minute_level % 60) {
-    
+
   }
 }
 
@@ -483,15 +495,15 @@ int isspace(int c)
 {
   if(((char)c)==' ')
     return 1;
-  return 0; 
+  return 0;
 }
 
 int isdigit(int c)
 {
   char cc = (char)c;
   if(cc>='0' && cc<='9')
-    return 1; 
-  return 0; 
+    return 1;
+  return 0;
 }
 
 double strtod(const char *nptr, char **endptr)
