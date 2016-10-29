@@ -9,7 +9,6 @@
 #define PIE_THICKNESS 10
 
 static AppSync s_sync;
-static uint8_t s_sync_buffer[64];
 
 static Window *s_main_window;
 
@@ -172,7 +171,6 @@ int main(void)
   update_watch();
   update_health();
   update_location();
-  request_data();
 
   app_event_loop();
 
@@ -511,10 +509,8 @@ static void update_health()
   text_layer_set_text(steps_now_average_text_layer, steps_now_buffer);
   text_layer_set_text(steps_average_text_layer, steps_average_buffer);
 
-  if (dayTime) {
-    layer_mark_dirty(steps_layer);
-    layer_mark_dirty(steps_now_layer);
-  }
+  layer_mark_dirty(steps_layer);
+  layer_mark_dirty(steps_now_layer);
 }
 
 /* Helper functions */

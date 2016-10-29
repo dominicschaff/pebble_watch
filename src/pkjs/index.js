@@ -7,6 +7,7 @@ navigator.getBattery().then(function(battery) {
   });
   function updateChargeInfo(){
     battery_charging = battery.charging ? 1 : 0;
+    console.log("Battery charging " + battery_charging);
     Pebble.sendAppMessage({'PhoneBatteryCharging' : battery_charging});
   }
 
@@ -15,6 +16,7 @@ navigator.getBattery().then(function(battery) {
   });
   function updateLevelInfo(){
     battery_percentage = Math.floor(battery.level * 100);
+    console.log("Battery percentage " + battery_percentage);
     Pebble.sendAppMessage({'PhoneBattery' : battery_percentage});
   }
   
