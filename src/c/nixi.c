@@ -201,12 +201,12 @@ static void main_window_load(Window *window)
 
   // Create hour meter Layer
   s_minute_layer = layer_create(GRect(PIE_THICKNESS, PIE_THICKNESS, bounds.size.w - (PIE_THICKNESS<<1), bounds.size.h - (PIE_THICKNESS<<1)));
-  layer_set_update_proc(s_minute_layer, time_hour_update_proc);
+  layer_set_update_proc(s_minute_layer, time_minute_update_proc);
   layer_add_child(window_layer, s_minute_layer);
 
   // Create hour meter Layer
   s_hour_layer = layer_create(GRect(bounds.size.w >> 3, bounds.size.h >> 3, (3 * bounds.size.w) >> 2, (3 * bounds.size.h) >> 2));
-  layer_set_update_proc(s_hour_layer, time_minute_update_proc);
+  layer_set_update_proc(s_hour_layer, time_hour_update_proc);
   layer_add_child(window_layer, s_hour_layer);
 
   // Create steps meter Layer
@@ -356,7 +356,7 @@ static void bluetooth_update_proc(Layer *layer, GContext *ctx)
 static void time_hour_update_proc(Layer *layer, GContext *ctx)
 {
   if (!dayTime) return;
-  graphics_context_set_fill_color(ctx, GColorPictonBlue);
+  graphics_context_set_fill_color(ctx, GColorMagenta);
   graphics_fill_radial(ctx, layer_get_bounds(layer), GOvalScaleModeFitCircle, PIE_THICKNESS, 0, (s_hour_level % 12) * DEG_TO_TRIGANGLE(30));
 }
 
@@ -369,7 +369,7 @@ static void time_hour_update_proc(Layer *layer, GContext *ctx)
 static void time_minute_update_proc(Layer *layer, GContext *ctx)
 {
   if (!dayTime) return;
-  graphics_context_set_fill_color(ctx, GColorMagenta);
+  graphics_context_set_fill_color(ctx, GColorPictonBlue);
   graphics_fill_radial(ctx, layer_get_bounds(layer), GOvalScaleModeFitCircle, PIE_THICKNESS, 0, s_minute_level * DEG_TO_TRIGANGLE(6));
 }
 
