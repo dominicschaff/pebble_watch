@@ -11,11 +11,6 @@
 static AppSync s_sync;
 static uint8_t s_sync_buffer[64];
 
-enum LocationKey {
-  LONGITUDE = 0x0,
-  LATITUDE = 0x1
-};
-
 static Window *s_main_window;
 
 static GFont s_time_font;
@@ -33,6 +28,8 @@ static int s_hour_level, s_minute_level;
 static int s_steps_level, s_steps_average, s_steps_average_now;
 static int timeMinutes;
 static bool bluetoothConnected = false;
+static int phoneBattery = -1;
+static bool battery_charging = false, phone_battery_charging = false;
 
 static void main_window_load(Window *window);
 static void main_window_unload(Window *window);
@@ -52,6 +49,7 @@ static void add_text_layer(Layer *window_layer, TextLayer *text_layer, GTextAlig
 static void update_watch();
 static void update_health();
 static void setTextColour();
+static void battery_update();
 
 static bool dayTime = true;
 
@@ -63,7 +61,7 @@ int tz;
 int sunriseHour = 0, sunriseMinute = 0, sunsetHour = 0, sunsetMinute = 0;
 int sunriseMinutes = 0, sunsetMinutes = 1500;
 
-static void update_location(void)
+static void update_location()
 {
   static char location_buffer[20];
   if (lat == 0 && lon == 0) {
@@ -101,20 +99,27 @@ static void update_location(void)
   update_watch();
 }
 
-static void sync_error_callback(DictionaryResult dict_error, AppMessageResult app_message_error, void *context) {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "App Message Sync Error: %d", app_message_error);
-}
-
-static void sync_tuple_changed_callback(const uint32_t key, const Tuple* new_tuple, const Tuple* old_tuple, void* context) {
-  switch (key) {
-    case LATITUDE:
-      lat = atof(new_tuple->value->cstring);
-      update_location();
-      break;
-    case LONGITUDE:
-      lon = atof(new_tuple->value->cstring);
-      update_location();
-      break;
+static void inbox_received_callback(DictionaryIterator *iter, void *context) {
+  Tuple *tup;
+  tup = dict_find(iter, MESSAGE_KEY_Latitude);
+  if(tup) {
+    lat = atof(tup->value->cstring);
+    update_location();
+  }
+  tup = dict_find(iter, MESSAGE_KEY_Longitude);
+  if(tup) {
+    lon = atof(tup->value->cstring);
+    update_location();
+  }
+  tup = dict_find(iter, MESSAGE_KEY_PhoneBattery);
+  if(tup) {
+    phoneBattery = tup->value->int32;
+    battery_update();
+  }
+  tup = dict_find(iter, MESSAGE_KEY_PhoneBatteryCharging);
+  if(tup) {
+    phone_battery_charging = tup->value->int32 == 1;
+    battery_update();
   }
 }
 
@@ -154,24 +159,19 @@ int main(void)
   connection_service_subscribe((ConnectionHandlers) {
     .pebble_app_connection_handler = bluetooth_callback
   });
+  
   app_message_open(64, 64);
-  update_watch();
+  app_message_register_inbox_received(inbox_received_callback);
+  
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
   s_steps_average = STEPS_DEFAULT;
 
   battery_callback(battery_state_service_peek());
   battery_state_service_subscribe(battery_callback);
+  
+  update_watch();
   update_health();
-
-  Tuplet initial_values[] = {
-    TupletCString(LONGITUDE, "0"),
-    TupletCString(LATITUDE, "0")
-  };
-
-  app_sync_init(&s_sync, s_sync_buffer, sizeof(s_sync_buffer),
-      initial_values, ARRAY_LENGTH(initial_values),
-      sync_tuple_changed_callback, sync_error_callback, NULL);
-
+  update_location();
   request_data();
 
   app_event_loop();
@@ -304,9 +304,19 @@ static void main_window_unload(Window *window)
  */
 static void battery_callback(BatteryChargeState state)
 {
-  static char battery_buffer[8];
   s_battery_level = state.charge_percent;
-  snprintf(battery_buffer, sizeof(battery_buffer), "%d%%%s", state.charge_percent, state.is_charging ? " +" : "");
+  battery_charging = state.is_charging;
+  battery_update();
+}
+
+static void battery_update()
+{
+  static char battery_buffer[15];
+  if (phoneBattery > -1) {
+    snprintf(battery_buffer, sizeof(battery_buffer), "%s%d%%:%s%d%%", battery_charging ? "+" : "", s_battery_level, phone_battery_charging ? "+" : "", phoneBattery);
+  } else {
+    snprintf(battery_buffer, sizeof(battery_buffer), "%s%d%%", battery_charging ? "+" : "", s_battery_level);
+  }
   text_layer_set_text(s_battery_text_layer, battery_buffer);
 }
 

@@ -12,10 +12,12 @@
         ],
         "displayName": "Nixi",
         "enableMultiJS": true,
-        "messageKeys": {
-            "LATITUDE": 1,
-            "LONGITUDE": 0
-        },
+        "messageKeys": [
+            "Longitude",
+            "Latitude",
+            "PhoneBattery",
+            "PhoneBatteryCharging"
+        ],
         "projectType": "native",
         "resources": {
             "media": [
