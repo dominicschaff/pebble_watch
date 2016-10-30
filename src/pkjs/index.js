@@ -18,6 +18,13 @@ navigator.getBattery().then(function(battery) {
     battery_percentage = Math.floor(battery.level * 100);
     console.log("Battery percentage " + battery_percentage);
     Pebble.sendAppMessage({'PhoneBattery' : battery_percentage});
+    if (battery_percentage == 100) {
+      Pebble.showSimpleNotificationOnPebble("Phone Battery", "Phone battery fully charged");
+    } else if (battery_percentage == 50) {
+      Pebble.showSimpleNotificationOnPebble("Phone Battery", "Phone battery is at half");
+    } else if (battery_percentage == 15) {
+      Pebble.showSimpleNotificationOnPebble("Phone Battery", "Phone battery is getting low");
+    }
   }
   
   updateChargeInfo();

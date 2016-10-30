@@ -463,7 +463,7 @@ static void update_watch()
   if (current_minute & 1)
     update_health();
 
-  if (current_hour == 0) {
+  if (current_time_minutes == 1) {
     request_data();
   }
 
