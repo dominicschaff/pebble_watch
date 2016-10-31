@@ -22,8 +22,16 @@ navigator.getBattery().then(function(battery) {
       Pebble.showSimpleNotificationOnPebble("Phone Battery", "Phone battery fully charged");
     } else if (battery_percentage == 50) {
       Pebble.showSimpleNotificationOnPebble("Phone Battery", "Phone battery is at half");
-    } else if (battery_percentage == 15) {
-      Pebble.showSimpleNotificationOnPebble("Phone Battery", "Phone battery is getting low");
+    } else if (battery_charging == 1) {
+      if (battery_percentage == 25) {
+        Pebble.showSimpleNotificationOnPebble("Phone Battery", "Phone battery is at a quarter charged");
+      } else if (battery_percentage == 75) {
+        Pebble.showSimpleNotificationOnPebble("Phone Battery", "Phone battery is at three quarters charged");
+      }
+    } else {
+      if (battery_percentage == 15) {
+        Pebble.showSimpleNotificationOnPebble("Phone Battery", "Phone battery is getting low");
+      }
     }
   }
   
