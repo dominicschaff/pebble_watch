@@ -20,16 +20,10 @@ navigator.getBattery().then(function(battery) {
     Pebble.sendAppMessage({'PhoneBattery' : battery_percentage});
     if (battery_percentage == 100) {
       Pebble.showSimpleNotificationOnPebble("Phone Battery", "Phone battery fully charged");
-    } else if (battery_percentage == 50) {
-      Pebble.showSimpleNotificationOnPebble("Phone Battery", "Phone battery is at half");
-    } else if (battery_charging == 1) {
-      if (battery_percentage == 25) {
-        Pebble.showSimpleNotificationOnPebble("Phone Battery", "Phone battery is at a quarter charged");
-      } else if (battery_percentage == 75) {
-        Pebble.showSimpleNotificationOnPebble("Phone Battery", "Phone battery is at three quarters charged");
-      }
-    } else {
-      if (battery_percentage == 15) {
+    } else if (battery_charging === 0) {
+      if (battery_percentage == 50) {
+        Pebble.showSimpleNotificationOnPebble("Phone Battery", "Phone battery is at half");
+      } else if (battery_percentage == 15) {
         Pebble.showSimpleNotificationOnPebble("Phone Battery", "Phone battery is getting low");
       }
     }
@@ -42,6 +36,8 @@ navigator.getBattery().then(function(battery) {
 
 function locationSuccess(pos) {
   var coordinates = pos.coords;
+  localStorage.setItem('Longitude', coordinates.longitude);
+  localStorage.setItem('Latitude', coordinates.latitude);
   Pebble.sendAppMessage({
     'Longitude': '' + coordinates.longitude,
     'Latitude' : '' + coordinates.latitude
@@ -64,7 +60,18 @@ var locationOptions = {
 
 Pebble.addEventListener('ready', function (e) {
   console.log('connect!' + e.ready);
-  window.navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
+  setTimeout(function(){
+    var lat = localStorage.getItem('Latitude');
+    var lon = localStorage.getItem('Longitude');
+    if (lat !== null && lon !== null) {
+      Pebble.sendAppMessage({
+        'Longitude': '' + lon,
+        'Latitude' : '' + lat
+      });
+    } else {
+      window.navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
+    }
+  }, 1000);
   console.log(e.type);
 });
 

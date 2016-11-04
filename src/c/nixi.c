@@ -36,6 +36,7 @@ static bool dayTime = true;
 
 static double lat = 0.0, lon = 0.0;
 static int sunriseMinutes = 0, sunsetMinutes = 1500;
+static bool locked = false;
 
 static void main_window_load(Window *window);
 static void main_window_unload(Window *window);
@@ -59,11 +60,12 @@ static void battery_update();
 
 static void update_location()
 {
-  static char location_buffer[20];
   if (lat == 0 && lon == 0) {
-      text_layer_set_text(location_text_layer, "Locating...");
+    locked = false;
+    battery_update();
     return;
   }
+  locked = true;
 
   time_t temp = time(NULL);
   struct tm *local_time = localtime(&temp);
@@ -87,13 +89,9 @@ static void update_location()
 
   sunriseMinutes = sunriseHour * 60 + sunriseMinute;
   sunsetMinutes = sunsetHour * 60 + sunsetMinute;
-
-  snprintf(location_buffer, sizeof(location_buffer),
-           "%d:%d - %d:%d",
-           sunriseHour, sunriseMinute,
-           sunsetHour, sunsetMinute);
-  text_layer_set_text(location_text_layer, location_buffer);
+  
   update_watch();
+  battery_update();
 }
 
 static void inbox_received_callback(DictionaryIterator *iter, void *context) {
@@ -309,12 +307,15 @@ static void battery_callback(BatteryChargeState state)
 
 static void battery_update()
 {
-  static char battery_buffer[15];
+  static char battery_buffer[8];
+  static char phone_battery_buffer[10];
+  snprintf(battery_buffer, sizeof(battery_buffer), "%s%d%%", battery_charging ? "+" : "", battery_level);
   if (phone_battery > -1) {
-    snprintf(battery_buffer, sizeof(battery_buffer), "%s%d%%:%s%d%%", battery_charging ? "+" : "", battery_level, phone_battery_charging ? "+" : "", phone_battery);
+    snprintf(phone_battery_buffer, sizeof(phone_battery_buffer), "%s%d%% %s", phone_battery_charging ? "+" : "", phone_battery, locked ? (dayTime ? "\U0001F603" : "\U0001F634") : "--");
   } else {
-    snprintf(battery_buffer, sizeof(battery_buffer), "%s%d%%", battery_charging ? "+" : "", battery_level);
+    snprintf(phone_battery_buffer, sizeof(phone_battery_buffer), "%s", locked ? (dayTime ? "\U0001F603" : "\U0001F634") : "--");
   }
+  text_layer_set_text(location_text_layer, phone_battery_buffer);
   text_layer_set_text(battery_text_layer, battery_buffer);
 }
 
@@ -398,7 +399,7 @@ static void steps_proc_layer(Layer *layer, GContext *ctx)
   graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS, 0, l * DEG_TO_TRIGANGLE(360));
 
   l = 1.0f * steps_average_now / steps_day_average;
-  graphics_context_set_fill_color(ctx, GColorDukeBlue);
+  graphics_context_set_fill_color(ctx, GColorVividCerulean);
   graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS >> 2, 0, l * DEG_TO_TRIGANGLE(360));
 }
 
