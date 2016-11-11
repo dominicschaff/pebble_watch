@@ -24,7 +24,7 @@ static TextLayer *steps_text_layer, *steps_perc_text_layer, *steps_now_average_t
 
 static TextLayer *time_hour_text_layer, *time_minute_text_layer, *date_text_layer, *day_text_layer;
 
-static int current_hour, current_minute, current_time_minutes;
+static int current_hour = -1, current_minute, current_time_minutes;
 
 static int current_steps = 0, steps_day_average, steps_average_now;
 
@@ -37,7 +37,6 @@ static bool dayTime = true;
 static double lat = 0.0, lon = 0.0;
 static int sunriseMinutes = 0, sunsetMinutes = 1500;
 static bool locked = false;
-static bool visible_things = false;
 
 static char steps_buffer[10];
 static char steps_perc_buffer[10];
@@ -67,7 +66,8 @@ static void update_watch();
 static void update_health();
 static void setTextColour();
 static void battery_update();
-static void watch_flick(bool flicked);
+static void show_text();
+static void hide_text();
 
 static void update_location()
 {
@@ -148,9 +148,9 @@ static void request_data(void)
   app_message_outbox_send();
 }
 
-static void accel_tap_handler(AccelAxisType axis, int32_t direction) {
-  // A tap event occured
-  watch_flick(true);
+static void accel_tap_handler(AccelAxisType axis, int32_t direction)
+{
+  show_text();
 }
 
 /**
@@ -507,8 +507,6 @@ static void update_watch()
   // Mark the layers as dirty
   if (tmp_hour != current_hour) layer_mark_dirty(hour_layer);
   layer_mark_dirty(minute_layer);
-  
-  watch_flick(false);
 }
 
 static void update_health()
@@ -519,16 +517,9 @@ static void update_health()
   if (steps_day_average < 1) steps_day_average = STEPS_DEFAULT;
 
   steps_average_now = (int)health_service_sum_averaged(HealthMetricStepCount, start, time(NULL), HealthServiceTimeScopeDailyWeekdayOrWeekend);
-
   if (steps_average_now < 1) steps_average_now = STEPS_DEFAULT;
 
   current_steps = (int)health_service_sum_today(HealthMetricStepCount);
-
-  format_number(steps_buffer, sizeof(steps_buffer), current_steps);
-  format_number(steps_average_buffer, sizeof(steps_average_buffer), steps_day_average);
-  format_number(steps_now_buffer, sizeof(steps_now_buffer), steps_average_now);
-
-  snprintf(steps_perc_buffer, sizeof(steps_perc_buffer), "%d%%", (int)(100.0f * current_steps / steps_day_average));
 
   layer_mark_dirty(steps_layer);
   layer_mark_dirty(steps_now_layer);
@@ -559,27 +550,33 @@ static void setTextColour()
   layer_mark_dirty(background_layer);
 }
 
-static void watch_flick(bool flicked)
+static void show_text()
 {
-  if (flicked) {
-    visible_things = true;
-    text_layer_set_text(steps_text_layer, steps_buffer);
-    text_layer_set_text(steps_perc_text_layer, steps_perc_buffer);
-    text_layer_set_text(steps_now_average_text_layer, steps_now_buffer);
-    text_layer_set_text(steps_average_text_layer, steps_average_buffer);
-    text_layer_set_text(date_text_layer, date_buffer);
-    text_layer_set_text(day_text_layer, day_buffer);
-    text_layer_set_text(location_text_layer, phone_battery_buffer);
-    text_layer_set_text(battery_text_layer, battery_buffer);
-  } else if (visible_things) {
-    visible_things = false;
-    text_layer_set_text(steps_text_layer, NULL);
-    text_layer_set_text(steps_perc_text_layer, NULL);
-    text_layer_set_text(steps_now_average_text_layer, NULL);
-    text_layer_set_text(steps_average_text_layer, NULL);
-    text_layer_set_text(date_text_layer, NULL);
-    text_layer_set_text(day_text_layer, NULL);
-    text_layer_set_text(location_text_layer, NULL);
-    text_layer_set_text(battery_text_layer, NULL);
-  }
+
+  format_number(steps_buffer, sizeof(steps_buffer), current_steps);
+  format_number(steps_average_buffer, sizeof(steps_average_buffer), steps_day_average);
+  format_number(steps_now_buffer, sizeof(steps_now_buffer), steps_average_now);
+  snprintf(steps_perc_buffer, sizeof(steps_perc_buffer), "%d%%", (int)(100.0f * current_steps / steps_day_average));
+  
+  text_layer_set_text(steps_text_layer, steps_buffer);
+  text_layer_set_text(steps_perc_text_layer, steps_perc_buffer);
+  text_layer_set_text(steps_now_average_text_layer, steps_now_buffer);
+  text_layer_set_text(steps_average_text_layer, steps_average_buffer);
+  text_layer_set_text(date_text_layer, date_buffer);
+  text_layer_set_text(day_text_layer, day_buffer);
+  text_layer_set_text(location_text_layer, phone_battery_buffer);
+  text_layer_set_text(battery_text_layer, battery_buffer);
+  app_timer_register(10000, hide_text, NULL);
+}
+
+static void hide_text()
+{
+  text_layer_set_text(steps_text_layer, NULL);
+  text_layer_set_text(steps_perc_text_layer, NULL);
+  text_layer_set_text(steps_now_average_text_layer, NULL);
+  text_layer_set_text(steps_average_text_layer, NULL);
+  text_layer_set_text(date_text_layer, NULL);
+  text_layer_set_text(day_text_layer, NULL);
+  text_layer_set_text(location_text_layer, NULL);
+  text_layer_set_text(battery_text_layer, NULL);
 }
