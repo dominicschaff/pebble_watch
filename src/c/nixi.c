@@ -26,7 +26,7 @@ static TextLayer *time_hour_text_layer, *time_minute_text_layer, *date_text_laye
 
 static int current_hour, current_minute, current_time_minutes;
 
-static int current_steps, steps_day_average, steps_average_now;
+static int current_steps = 0, steps_day_average, steps_average_now;
 
 static int battery_level;
 static int phone_battery = -1;
@@ -491,8 +491,7 @@ static void update_watch()
   text_layer_set_text(date_text_layer, date_buffer);
   text_layer_set_text(day_text_layer, day_buffer);
 
-  if (current_minute & 1)
-    update_health();
+  update_health();
 
   if (current_time_minutes == 1) {
     request_data();
@@ -516,27 +515,28 @@ static void update_health()
   static char steps_perc_buffer[10];
   static char steps_now_buffer[10];
   static char steps_average_buffer[10];
-
-  int start = time_start_of_today();
-
-  steps_day_average = (int)health_service_sum_averaged(HealthMetricStepCount, start, start + SECONDS_PER_DAY, HealthServiceTimeScopeDailyWeekdayOrWeekend);
-  if (steps_day_average < 1) steps_day_average = STEPS_DEFAULT;
-
-  steps_average_now = (int)health_service_sum_averaged(HealthMetricStepCount, start, time(NULL), HealthServiceTimeScopeDailyWeekdayOrWeekend);
-
-  if (steps_average_now < 1) steps_average_now = STEPS_DEFAULT;
-
-  current_steps = (int)health_service_sum_today(HealthMetricStepCount);
-
-  format_number(steps_buffer, sizeof(steps_buffer), current_steps);
-  format_number(steps_average_buffer, sizeof(steps_average_buffer), steps_day_average);
-  format_number(steps_now_buffer, sizeof(steps_now_buffer), steps_average_now);
-
-  snprintf(steps_perc_buffer, sizeof(steps_perc_buffer), "%d%%", (int)(100.0f * current_steps / steps_day_average));
-
-
-  layer_mark_dirty(steps_layer);
-  layer_mark_dirty(steps_now_layer);
+  if (current_minute & 1 || current_steps == 0) {
+    int start = time_start_of_today();
+  
+    steps_day_average = (int)health_service_sum_averaged(HealthMetricStepCount, start, start + SECONDS_PER_DAY, HealthServiceTimeScopeDailyWeekdayOrWeekend);
+    if (steps_day_average < 1) steps_day_average = STEPS_DEFAULT;
+  
+    steps_average_now = (int)health_service_sum_averaged(HealthMetricStepCount, start, time(NULL), HealthServiceTimeScopeDailyWeekdayOrWeekend);
+  
+    if (steps_average_now < 1) steps_average_now = STEPS_DEFAULT;
+  
+    current_steps = (int)health_service_sum_today(HealthMetricStepCount);
+  
+    format_number(steps_buffer, sizeof(steps_buffer), current_steps);
+    format_number(steps_average_buffer, sizeof(steps_average_buffer), steps_day_average);
+    format_number(steps_now_buffer, sizeof(steps_now_buffer), steps_average_now);
+  
+    snprintf(steps_perc_buffer, sizeof(steps_perc_buffer), "%d%%", (int)(100.0f * current_steps / steps_day_average));
+  
+  
+    layer_mark_dirty(steps_layer);
+    layer_mark_dirty(steps_now_layer);
+  }
     
   if (flicked) {
     flicked = false;
