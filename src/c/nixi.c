@@ -38,6 +38,8 @@ static double lat = 0.0, lon = 0.0;
 static int sunriseMinutes = 0, sunsetMinutes = 1500;
 static bool locked = false;
 
+static bool flicked = false;
+
 static void main_window_load(Window *window);
 static void main_window_unload(Window *window);
 
@@ -137,6 +139,12 @@ static void request_data(void)
   app_message_outbox_send();
 }
 
+static void accel_tap_handler(AccelAxisType axis, int32_t direction) {
+  // A tap event occured
+  flicked = true;
+  update_health();
+}
+
 /**
  * Main function, the watch runs this function
  */
@@ -165,6 +173,7 @@ int main(void)
 
   battery_callback(battery_state_service_peek());
   battery_state_service_subscribe(battery_callback);
+  accel_tap_service_subscribe(accel_tap_handler);
 
   update_watch();
   update_health();
@@ -196,14 +205,14 @@ static void main_window_load(Window *window)
   layer_add_child(window_layer, background_layer);
 
   // Create hour meter Layer
-  minute_layer = layer_create(GRect(PIE_THICKNESS, PIE_THICKNESS, bounds.size.w - (PIE_THICKNESS<<1), bounds.size.h - (PIE_THICKNESS<<1)));
-  layer_set_update_proc(minute_layer, time_minute_update_proc);
-  layer_add_child(window_layer, minute_layer);
-
-  // Create hour meter Layer
   hour_layer = layer_create(GRect(bounds.size.w >> 3, bounds.size.h >> 3, (3 * bounds.size.w) >> 2, (3 * bounds.size.h) >> 2));
   layer_set_update_proc(hour_layer, time_hour_update_proc);
   layer_add_child(window_layer, hour_layer);
+
+  // Create minute meter Layer
+  minute_layer = layer_create(GRect(PIE_THICKNESS, PIE_THICKNESS, bounds.size.w - (PIE_THICKNESS<<1), bounds.size.h - (PIE_THICKNESS<<1)));
+  layer_set_update_proc(minute_layer, time_minute_update_proc);
+  layer_add_child(window_layer, minute_layer);
 
   // Create steps meter Layer
   steps_layer = layer_create(bounds);
@@ -525,14 +534,54 @@ static void update_health()
 
   snprintf(steps_perc_buffer, sizeof(steps_perc_buffer), "%d%%", (int)(100.0f * current_steps / steps_day_average));
 
-  // Set the steps display
-  text_layer_set_text(steps_text_layer, steps_buffer);
-  text_layer_set_text(steps_perc_text_layer, steps_perc_buffer);
-  text_layer_set_text(steps_now_average_text_layer, steps_now_buffer);
-  text_layer_set_text(steps_average_text_layer, steps_average_buffer);
 
   layer_mark_dirty(steps_layer);
   layer_mark_dirty(steps_now_layer);
+    
+  if (flicked) {
+    flicked = false;
+    // Set the steps display
+    text_layer_set_text(steps_text_layer, steps_buffer);
+    text_layer_set_text(steps_perc_text_layer, steps_perc_buffer);
+    text_layer_set_text(steps_now_average_text_layer, steps_now_buffer);
+    text_layer_set_text(steps_average_text_layer, steps_average_buffer);
+  } else {
+    text_layer_set_text(steps_text_layer, "");
+    if (current_time_minutes < 421) { // morning
+      
+    } else if (current_time_minutes < 451) { // breakfast
+      text_layer_set_text(steps_text_layer, "Breakfast");
+    } else if (current_time_minutes < 541) { // before second breakfast
+      
+    } else if (current_time_minutes < 571) { // second breakfast
+      text_layer_set_text(steps_text_layer, "Second Breakfast");
+    } else if (current_time_minutes < 661) { // before elevenses
+      
+    } else if (current_time_minutes < 691) { // elevenses
+      text_layer_set_text(steps_text_layer, "Elevenses");
+    } else if (current_time_minutes < 781) { // before lunch
+      
+    } else if (current_time_minutes < 811) { // lunch
+      text_layer_set_text(steps_text_layer, "Lunch");
+    } else if (current_time_minutes < 901) { // before afternoon tea
+      
+    } else if (current_time_minutes < 931) { // afternoon tea
+      text_layer_set_text(steps_text_layer, "Afternoon tea");
+    } else if (current_time_minutes < 1081) { // before dinner
+      
+    } else if (current_time_minutes < 1101) { // dinner
+      text_layer_set_text(steps_text_layer, "Dinner");
+    } else if (current_time_minutes < 1261) { // before supper
+      
+    } else if (current_time_minutes < 1291) { // supper
+      text_layer_set_text(steps_text_layer, "Supper");
+    } else {
+
+    }
+    text_layer_set_text(steps_perc_text_layer, "");
+    text_layer_set_text(steps_now_average_text_layer, "");
+    text_layer_set_text(steps_average_text_layer, "");
+  }
 }
 
 /* Helper functions */
