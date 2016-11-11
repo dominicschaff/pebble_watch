@@ -365,8 +365,18 @@ static void bluetooth_update_proc(Layer *layer, GContext *ctx)
 static void time_hour_update_proc(Layer *layer, GContext *ctx)
 {
   if (!dayTime) return;
+  GRect bounds = layer_get_bounds(layer);
   graphics_context_set_fill_color(ctx, GColorMagenta);
-  graphics_fill_radial(ctx, layer_get_bounds(layer), GOvalScaleModeFitCircle, PIE_THICKNESS, 0, (current_hour % 12) * DEG_TO_TRIGANGLE(30));
+  graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS, 0, (current_hour % 12) * DEG_TO_TRIGANGLE(30));
+  
+  graphics_context_set_stroke_width(ctx, 5);
+  graphics_context_set_stroke_color(ctx, GColorMagenta);
+  
+  int32_t angle = TRIG_MAX_ANGLE * (current_hour % 12) / 12;
+  int hw = bounds.size.w>>1;
+  int hh = bounds.size.h>>1;
+  
+  graphics_draw_line(ctx, GPoint(hw, hh), GPoint((sin_lookup(angle) * hw / TRIG_MAX_RATIO) + hw, (-cos_lookup(angle) * hw / TRIG_MAX_RATIO) + hh));
 }
 
 /**
@@ -378,8 +388,19 @@ static void time_hour_update_proc(Layer *layer, GContext *ctx)
 static void time_minute_update_proc(Layer *layer, GContext *ctx)
 {
   if (!dayTime) return;
+  GRect bounds = layer_get_bounds(layer);
   graphics_context_set_fill_color(ctx, GColorPictonBlue);
-  graphics_fill_radial(ctx, layer_get_bounds(layer), GOvalScaleModeFitCircle, PIE_THICKNESS, 0, current_minute * DEG_TO_TRIGANGLE(6));
+  graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS, 0, current_minute * DEG_TO_TRIGANGLE(6));
+  
+  
+  graphics_context_set_stroke_width(ctx, 5);
+  graphics_context_set_stroke_color(ctx, GColorPictonBlue);
+  
+  int32_t angle = TRIG_MAX_ANGLE * current_minute / 60;
+  int hw = bounds.size.w>>1;
+  int hh = bounds.size.h>>1;
+  
+  graphics_draw_line(ctx, GPoint(hw, hh), GPoint((sin_lookup(angle) * hw / TRIG_MAX_RATIO) + hw, (-cos_lookup(angle) * hw / TRIG_MAX_RATIO) + hh));
 }
 
 /**
