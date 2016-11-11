@@ -37,6 +37,7 @@ static bool dayTime = true;
 static double lat = 0.0, lon = 0.0;
 static int sunriseMinutes = 0, sunsetMinutes = 1500;
 static bool locked = false;
+static bool visible_things = false;
 
 static char steps_buffer[10];
 static char steps_perc_buffer[10];
@@ -561,6 +562,7 @@ static void setTextColour()
 static void watch_flick(bool flicked)
 {
   if (flicked) {
+    visible_things = true;
     text_layer_set_text(steps_text_layer, steps_buffer);
     text_layer_set_text(steps_perc_text_layer, steps_perc_buffer);
     text_layer_set_text(steps_now_average_text_layer, steps_now_buffer);
@@ -569,7 +571,8 @@ static void watch_flick(bool flicked)
     text_layer_set_text(day_text_layer, day_buffer);
     text_layer_set_text(location_text_layer, phone_battery_buffer);
     text_layer_set_text(battery_text_layer, battery_buffer);
-  } else {
+  } else if (visible_things) {
+    visible_things = false;
     text_layer_set_text(steps_text_layer, NULL);
     text_layer_set_text(steps_perc_text_layer, NULL);
     text_layer_set_text(steps_now_average_text_layer, NULL);
