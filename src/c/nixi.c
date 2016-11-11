@@ -540,44 +540,12 @@ static void update_health()
     
   if (flicked) {
     flicked = false;
-    // Set the steps display
     text_layer_set_text(steps_text_layer, steps_buffer);
     text_layer_set_text(steps_perc_text_layer, steps_perc_buffer);
     text_layer_set_text(steps_now_average_text_layer, steps_now_buffer);
     text_layer_set_text(steps_average_text_layer, steps_average_buffer);
   } else {
     text_layer_set_text(steps_text_layer, "");
-    if (current_time_minutes < 421) { // morning
-      
-    } else if (current_time_minutes < 451) { // breakfast
-      text_layer_set_text(steps_text_layer, "Breakfast");
-    } else if (current_time_minutes < 541) { // before second breakfast
-      
-    } else if (current_time_minutes < 571) { // second breakfast
-      text_layer_set_text(steps_text_layer, "Second Breakfast");
-    } else if (current_time_minutes < 661) { // before elevenses
-      
-    } else if (current_time_minutes < 691) { // elevenses
-      text_layer_set_text(steps_text_layer, "Elevenses");
-    } else if (current_time_minutes < 781) { // before lunch
-      
-    } else if (current_time_minutes < 811) { // lunch
-      text_layer_set_text(steps_text_layer, "Lunch");
-    } else if (current_time_minutes < 901) { // before afternoon tea
-      
-    } else if (current_time_minutes < 931) { // afternoon tea
-      text_layer_set_text(steps_text_layer, "Afternoon tea");
-    } else if (current_time_minutes < 1081) { // before dinner
-      
-    } else if (current_time_minutes < 1101) { // dinner
-      text_layer_set_text(steps_text_layer, "Dinner");
-    } else if (current_time_minutes < 1261) { // before supper
-      
-    } else if (current_time_minutes < 1291) { // supper
-      text_layer_set_text(steps_text_layer, "Supper");
-    } else {
-
-    }
     text_layer_set_text(steps_perc_text_layer, "");
     text_layer_set_text(steps_now_average_text_layer, "");
     text_layer_set_text(steps_average_text_layer, "");
