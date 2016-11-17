@@ -21,7 +21,7 @@ static Layer *hour_layer, *minute_layer;
 
 static TextLayer *battery_text_layer, *location_text_layer;
 
-static TextLayer *steps_text_layer, *steps_perc_text_layer, *steps_now_average_text_layer, *steps_average_text_layer;
+static TextLayer *steps_text_layer, *steps_now_average_text_layer, *steps_average_text_layer;
 
 static TextLayer *time_hour_text_layer, *time_minute_text_layer, *date_text_layer, *day_text_layer;
 
@@ -248,12 +248,7 @@ static void main_window_load(Window *window)
   // Create the steps display
   steps_text_layer = text_layer_create(GRect(0, bounds.size.h - SUB_TEXT_HEIGHT, bounds.size.w, SUB_TEXT_HEIGHT));
   text_layer_set_font(steps_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
-  add_text_layer(window_layer, steps_text_layer, GTextAlignmentLeft);
-
-  // Create the steps percentage display
-  steps_perc_text_layer = text_layer_create(GRect(0, bounds.size.h - SUB_TEXT_HEIGHT, bounds.size.w, SUB_TEXT_HEIGHT));
-  text_layer_set_font(steps_perc_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
-  add_text_layer(window_layer, steps_perc_text_layer, GTextAlignmentRight);
+  add_text_layer(window_layer, steps_text_layer, GTextAlignmentCenter);
 
   // Create the current average steps display
   steps_now_average_text_layer = text_layer_create(GRect(0, bounds.size.h - SUB_TEXT_HEIGHT - 13, bounds.size.w, SUB_TEXT_HEIGHT));
@@ -292,7 +287,6 @@ static void main_window_unload(Window *window)
   fonts_unload_custom_font(s_time_font);
 
   text_layer_destroy(steps_text_layer);
-  text_layer_destroy(steps_perc_text_layer);
   text_layer_destroy(steps_now_average_text_layer);
   text_layer_destroy(steps_average_text_layer);
   layer_destroy(steps_layer);
@@ -513,7 +507,6 @@ static void setTextColour()
   text_layer_set_text_color(day_text_layer, dayTime ? GColorBlack : GColorWhite);
   text_layer_set_text_color(location_text_layer, dayTime ? GColorBlack : GColorWhite);
   text_layer_set_text_color(steps_text_layer, dayTime ? GColorBlack : GColorWhite);
-  text_layer_set_text_color(steps_perc_text_layer, dayTime ? GColorBlack : GColorWhite);
   text_layer_set_text_color(steps_now_average_text_layer, dayTime ? GColorBlack : GColorWhite);
   text_layer_set_text_color(steps_average_text_layer, dayTime ? GColorBlack : GColorWhite);
   text_layer_set_text_color(battery_text_layer, dayTime ? GColorBlack : GColorWhite);
@@ -522,18 +515,21 @@ static void setTextColour()
 
 static void show_text()
 {
-
+  static char steps[25];
+  
   format_number(steps_buffer, sizeof(steps_buffer), current_steps);
   format_number(steps_average_buffer, sizeof(steps_average_buffer), steps_day_average);
   format_number(steps_now_buffer, sizeof(steps_now_buffer), steps_average_now);
+  snprintf(steps, sizeof(steps), "%s / %s", steps_buffer, steps_average_buffer);
   snprintf(steps_perc_buffer, sizeof(steps_perc_buffer), "%d%%", (int)(100.0f * current_steps / steps_day_average));
   
-  text_layer_set_text(steps_text_layer, steps_buffer);
-  text_layer_set_text(steps_perc_text_layer, steps_perc_buffer);
+  text_layer_set_text(steps_text_layer, steps);
   text_layer_set_text(steps_now_average_text_layer, steps_now_buffer);
-  text_layer_set_text(steps_average_text_layer, steps_average_buffer);
+  text_layer_set_text(steps_average_text_layer, steps_perc_buffer); //steps_average_buffer
+  
   text_layer_set_text(date_text_layer, date_buffer);
   text_layer_set_text(day_text_layer, day_buffer);
+  
   text_layer_set_text(location_text_layer, phone_battery_buffer);
   text_layer_set_text(battery_text_layer, battery_buffer);
   app_timer_register(10000, hide_text, NULL);
@@ -542,7 +538,6 @@ static void show_text()
 static void hide_text()
 {
   text_layer_set_text(steps_text_layer, NULL);
-  text_layer_set_text(steps_perc_text_layer, NULL);
   text_layer_set_text(steps_now_average_text_layer, NULL);
   text_layer_set_text(steps_average_text_layer, NULL);
   text_layer_set_text(date_text_layer, NULL);
