@@ -16,7 +16,7 @@ static Window *s_main_window;
 static GFont s_time_font;
 
 static Layer *background_layer;
-static Layer *steps_layer, *steps_now_layer;
+static Layer *steps_layer;
 static Layer *hour_layer, *minute_layer;
 
 static TextLayer *battery_text_layer, *location_text_layer;
@@ -55,7 +55,6 @@ static void battery_callback(BatteryChargeState state);
 static void bluetooth_callback(bool connected);
 
 static void bluetooth_update_proc(Layer *layer, GContext *ctx);
-static void steps_now_proc_layer(Layer *layer, GContext *ctx);
 static void steps_proc_layer(Layer *layer, GContext *ctx);
 static void time_hour_update_proc(Layer *layer, GContext *ctx);
 static void time_minute_update_proc(Layer *layer, GContext *ctx);
@@ -205,9 +204,6 @@ static void main_window_load(Window *window)
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
-  int hh = bounds.size.h>>1;
-  int hw = bounds.size.w>>1;
-
   // Create bluetooth meter Layer
   background_layer = layer_create(bounds);
   layer_set_update_proc(background_layer, bluetooth_update_proc);
@@ -227,11 +223,6 @@ static void main_window_load(Window *window)
   steps_layer = layer_create(bounds);
   layer_set_update_proc(steps_layer, steps_proc_layer);
   layer_add_child(window_layer, steps_layer);
-
-  // Create now steps meter Layer
-  steps_now_layer = layer_create(GRect(hw>>1, hh>>1, hw, hh));
-  layer_set_update_proc(steps_now_layer, steps_now_proc_layer);
-  layer_add_child(window_layer, steps_now_layer);
 
   s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_PIXELS_49));
 
@@ -305,7 +296,6 @@ static void main_window_unload(Window *window)
   text_layer_destroy(steps_now_average_text_layer);
   text_layer_destroy(steps_average_text_layer);
   layer_destroy(steps_layer);
-  layer_destroy(steps_now_layer);
 
   text_layer_destroy(battery_text_layer);
   layer_destroy(background_layer);
@@ -366,30 +356,9 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed)
  */
 static void bluetooth_update_proc(Layer *layer, GContext *ctx)
 {
-  int s, x, y, i, c;
-  GRect bounds = layer_get_bounds(layer);
-  graphics_context_set_fill_color(ctx, bluetooth_connected ? (dayTime ? GColorWhite : GColorBlack) : GColorRed);
-  graphics_fill_rect(ctx, bounds, 0, GCornerNone);
-  if (bluetooth_connected && dayTime) {
-    graphics_context_set_stroke_width(ctx, 5);
-    c = rand() % NUMBER_OF_COLOURS;
-    switch (c) {
-      case 0: graphics_context_set_stroke_color(ctx, GColorCadetBlue); break;
-      case 1: graphics_context_set_stroke_color(ctx, GColorBrass); break;
-      case 2: graphics_context_set_stroke_color(ctx, GColorChromeYellow); break;
-      case 3: graphics_context_set_stroke_color(ctx, GColorRoseVale); break;
-      case 4: graphics_context_set_stroke_color(ctx, GColorPurpureus); break;
-      case 5: graphics_context_set_stroke_color(ctx, GColorLiberty); break;
-      case 6:
-      default: graphics_context_set_stroke_color(ctx, GColorScreaminGreen); break;
-    }
-    for (i = 0; i < 5; i++) {
-      s = (rand() % 25) + 5;
-      x = (rand() % (bounds.size.w - (s>>1))) + s;
-      y = (rand() % (bounds.size.h - (s>>1))) + s;
-      graphics_draw_circle(ctx, GPoint(x, y), s);
-    }
-  }
+  if (bluetooth_connected && dayTime) return;
+  graphics_context_set_fill_color(ctx, bluetooth_connected ? GColorBlack : GColorRed);
+  graphics_fill_rect(ctx, layer_get_bounds(layer), 0, GCornerNone);
 }
 
 /**
@@ -460,30 +429,6 @@ static void steps_proc_layer(Layer *layer, GContext *ctx)
   graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS * 0.3, 0, l * DEG_TO_TRIGANGLE(360));
 }
 
-/**
- * When the steps layer is marked as dirty run this
- *
- * @param layer The layer to update
- * @param ctx   The context
- */
-static void steps_now_proc_layer(Layer *layer, GContext *ctx)
-{
-//   if (!dayTime) return;
-//   GRect bounds = layer_get_bounds(layer);
-
-//   float l = 1.0f * current_steps / steps_average_now;
-
-//   l = DEG_TO_TRIGANGLE((((l > 2) ? 1.0 : ((l < 0) ? -1.0 : l - 1.0))) * 180);
-
-//   graphics_context_set_fill_color(ctx, GColorLavenderIndigo);
-//   if (l < 0) {
-//     graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS, DEG_TO_TRIGANGLE(360) + l, DEG_TO_TRIGANGLE(360));
-//   } else {
-//     graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS, 0, l);
-//   }
-
-}
-
 /* Watch update for tick: */
 
 /**
@@ -548,7 +493,6 @@ static void update_health()
   current_steps = (int)health_service_sum_today(HealthMetricStepCount);
 
   layer_mark_dirty(steps_layer);
-  layer_mark_dirty(steps_now_layer);
 }
 
 /* Helper functions */
