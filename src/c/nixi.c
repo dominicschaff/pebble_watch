@@ -7,6 +7,7 @@
 #define SUB_TEXT_HEIGHT 30
 #define TITLE_TEXT_HEIGHT 49
 #define PIE_THICKNESS 10
+#define NUMBER_OF_COLOURS 7
 
 static AppSync s_sync;
 
@@ -365,8 +366,30 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed)
  */
 static void bluetooth_update_proc(Layer *layer, GContext *ctx)
 {
+  int s, x, y, i, c;
+  GRect bounds = layer_get_bounds(layer);
   graphics_context_set_fill_color(ctx, bluetooth_connected ? (dayTime ? GColorWhite : GColorBlack) : GColorRed);
-  graphics_fill_rect(ctx, layer_get_bounds(layer), 0, GCornerNone);
+  graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+  if (bluetooth_connected && dayTime) {
+    graphics_context_set_stroke_width(ctx, 5);
+    c = rand() % NUMBER_OF_COLOURS;
+    switch (c) {
+      case 0: graphics_context_set_stroke_color(ctx, GColorCadetBlue); break;
+      case 1: graphics_context_set_stroke_color(ctx, GColorBrass); break;
+      case 2: graphics_context_set_stroke_color(ctx, GColorChromeYellow); break;
+      case 3: graphics_context_set_stroke_color(ctx, GColorRoseVale); break;
+      case 4: graphics_context_set_stroke_color(ctx, GColorPurpureus); break;
+      case 5: graphics_context_set_stroke_color(ctx, GColorLiberty); break;
+      case 6:
+      default: graphics_context_set_stroke_color(ctx, GColorScreaminGreen); break;
+    }
+    for (i = 0; i < 5; i++) {
+      s = (rand() % 25) + 5;
+      x = (rand() % (bounds.size.w - (s>>1))) + s;
+      y = (rand() % (bounds.size.h - (s>>1))) + s;
+      graphics_draw_circle(ctx, GPoint(x, y), s);
+    }
+  }
 }
 
 /**
@@ -434,7 +457,7 @@ static void steps_proc_layer(Layer *layer, GContext *ctx)
 
   l = 1.0f * steps_average_now / steps_day_average;
   graphics_context_set_fill_color(ctx, GColorVividCerulean);
-  graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS >> 2, 0, l * DEG_TO_TRIGANGLE(360));
+  graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS * 0.3, 0, l * DEG_TO_TRIGANGLE(360));
 }
 
 /**
@@ -445,19 +468,19 @@ static void steps_proc_layer(Layer *layer, GContext *ctx)
  */
 static void steps_now_proc_layer(Layer *layer, GContext *ctx)
 {
-  if (!dayTime) return;
-  GRect bounds = layer_get_bounds(layer);
+//   if (!dayTime) return;
+//   GRect bounds = layer_get_bounds(layer);
 
-  float l = 1.0f * current_steps / steps_average_now;
+//   float l = 1.0f * current_steps / steps_average_now;
 
-  l = DEG_TO_TRIGANGLE((((l > 2) ? 1.0 : ((l < 0) ? -1.0 : l - 1.0))) * 180);
+//   l = DEG_TO_TRIGANGLE((((l > 2) ? 1.0 : ((l < 0) ? -1.0 : l - 1.0))) * 180);
 
-  graphics_context_set_fill_color(ctx, GColorLavenderIndigo);
-  if (l < 0) {
-    graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS, DEG_TO_TRIGANGLE(360) + l, DEG_TO_TRIGANGLE(360));
-  } else {
-    graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS, 0, l);
-  }
+//   graphics_context_set_fill_color(ctx, GColorLavenderIndigo);
+//   if (l < 0) {
+//     graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS, DEG_TO_TRIGANGLE(360) + l, DEG_TO_TRIGANGLE(360));
+//   } else {
+//     graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, PIE_THICKNESS, 0, l);
+//   }
 
 }
 
@@ -507,6 +530,9 @@ static void update_watch()
   // Mark the layers as dirty
   if (tmp_hour != current_hour) layer_mark_dirty(hour_layer);
   layer_mark_dirty(minute_layer);
+  if (dayTime) {
+    layer_mark_dirty(background_layer);
+  }
 }
 
 static void update_health()
