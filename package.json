@@ -1,45 +1,51 @@
 {
-    "author": "Merlin",
-    "dependencies": {},
-    "keywords": [
-        "pebble-app"
+  "name": "drixi",
+  "author": "Merlin",
+  "version": "1.4.0",
+  "keywords": [
+    "pebble-app"
+  ],
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "projectType": "native",
+    "capabilities": [
+      "location",
+      "health"
     ],
-    "name": "nixi",
-    "pebble": {
-        "capabilities": [
-            "location",
-            "health"
-        ],
-        "displayName": "Nixi",
-        "enableMultiJS": true,
-        "messageKeys": [
-            "Longitude",
-            "Latitude",
-            "PhoneBattery",
-            "PhoneBatteryCharging"
-        ],
-        "projectType": "native",
-        "resources": {
-            "media": [
-                {
-                    "characterRegex": "[0-9:]",
-                    "file": "fonts/blocked.ttf",
-                    "name": "PIXELS_49",
-                    "targetPlatforms": [
-                        "basalt"
-                    ],
-                    "type": "font"
-                }
-            ]
-        },
-        "sdkVersion": "3",
-        "targetPlatforms": [
-            "basalt"
-        ],
-        "uuid": "2d1431e5-c9bb-4612-85a7-262b032f8492",
-        "watchapp": {
-            "watchface": true
-        }
+    "displayName": "Drixi",
+    "uuid": "c1d1a3c4-021e-42d3-9ec8-161bc1f9c5ae",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "basalt"
+    ],
+    "watchapp": {
+      "watchface": true
     },
-    "version": "2.2.0"
+    "messageKeys": [
+      "PhoneBattery",
+      "PhoneBatteryCharging"
+    ],
+    "resources": {
+      "media": [
+        {
+          "file": "fonts/leco.ttf",
+          "name": "LECO_15",
+          "targetPlatforms": [
+            "basalt"
+          ],
+          "type": "font"
+        },
+        {
+          "file": "fonts/leco.ttf",
+          "name": "LECO_42",
+          "targetPlatforms": [
+            "basalt"
+          ],
+          "type": "font"
+        }
+      ]
+    }
+  }
 }
